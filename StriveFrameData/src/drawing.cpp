@@ -802,6 +802,8 @@ void resetFrames() {
   state_data.active = false;
   state_data.current_state.first = PlayerState();
   state_data.current_state.second = PlayerState();
+  state_data.resetFrames();
+
   ptracker.reset();
 }
 
