@@ -138,10 +138,6 @@ class StateMgr {
 
 struct ConfigMgr {
   bool overlayEnabled = true;
-  bool truncEnabled = true;
-  bool dustloopEnabled = false;
-  bool fadeEnabled = true;
-  int resetButton = 7;
 } cfg;
 
 class UeTracker {
@@ -288,28 +284,30 @@ class UeTracker {
   }
 } tracker;
 
+constexpr int TOGGLE_FRAMEBAR_BUTTON = VK_F1;
+constexpr int PAUSE_BUTTON = VK_F2;
+constexpr int ADVANCE_BUTTON = VK_F3;
+
+
 class AsyncInputChecker {
-  int pauseButton = VK_F2;
-  int advanceButton = VK_F3;
   bool isPaused = false;
   bool shouldAdvance = false;
 
   void checkBinds(bool await = false) {
     auto inputs = BindWatcherI::getInputs(await);
     for (const auto& input : inputs) {
-      if (input == pauseButton) {
+      switch (input) {
+      case TOGGLE_FRAMEBAR_BUTTON:
+        cfg.overlayEnabled = !cfg.overlayEnabled;
+        break;
+      case PAUSE_BUTTON:
         isPaused = !isPaused;
-      } else if (input == advanceButton) {
-                shouldAdvance = true;
-
-//        logEvents = !logEvents;
-//
-//        Output::send<LogLevel::Verbose>(STR("Test Frame 1\n"));
-//
-//        Output::send<LogLevel::Verbose>(tracker.isUePaused() ? STR("Tracker UE Paused\n") : STR("Tracker Not UE Pasued\n"));
-//        Output::send<LogLevel::Verbose>(game_state.roundActive ? STR("Gamestate Round Active\n") : STR("Gamestate Round Not Active\n"));
-//        addFrame();
-
+        break;
+      case ADVANCE_BUTTON:
+        shouldAdvance=true;
+        break;
+      default:
+        break;
       }
     }
   }
@@ -329,6 +327,7 @@ public:
   void reset() {
     isPaused = false;
     shouldAdvance = false;
+    cfg.overlayEnabled = true;
   }
 } input_checker;
 
@@ -418,8 +417,9 @@ class StriveFrameData : public CppUserModBase {
     ASWInitFunctions();
     bbscript::BBSInitializeFunctions();
 
-    BindWatcherI::addToFilter(VK_F2);
-    BindWatcherI::addToFilter(VK_F3);
+    BindWatcherI::addToFilter(TOGGLE_FRAMEBAR_BUTTON);
+    BindWatcherI::addToFilter(PAUSE_BUTTON);
+    BindWatcherI::addToFilter(ADVANCE_BUTTON);
   }
 };
 
