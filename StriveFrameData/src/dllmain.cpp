@@ -88,6 +88,8 @@ funcUpdateBattle_t orig_UpdateBattle;
 // State Data
 UE4SSProgram* Program;
 
+bool logEvents = false;
+
 // Trackers
 class StateMgr {
   UREDGameCommon* GameCommon = nullptr;
@@ -133,6 +135,7 @@ class StateMgr {
   bool roundActive = false;
 
 } game_state;
+
 struct ConfigMgr {
   bool overlayEnabled = true;
   bool truncEnabled = true;
@@ -140,40 +143,7 @@ struct ConfigMgr {
   bool fadeEnabled = true;
   int resetButton = 7;
 } cfg;
-class AsyncInputChecker {
-  int pauseButton = VK_F2;
-  int advanceButton = VK_F3;
-  bool isPaused = false;
-  bool shouldAdvance = false;
 
-  void checkBinds(bool await = false) {
-    auto inputs = BindWatcherI::getInputs(await);
-    for (const auto& input : inputs) {
-      if (input == pauseButton) {
-        isPaused = !isPaused;
-      } else if (input == advanceButton) {
-        shouldAdvance = true;
-      }
-    }
-  }
-
- public:
-  bool advancing() const { return isPaused && shouldAdvance; }
-  void pause() {
-    if(advancing()){
-      shouldAdvance = false;
-      return;
-    }
-    checkBinds();
-    while (isPaused && !shouldAdvance) {
-      checkBinds(true);
-    }
-  }
-  void reset() {
-    isPaused = false;
-    shouldAdvance = false;
-  }
-} input_checker;
 class UeTracker {
   Unreal::AActor* input_actor = nullptr;
   Unreal::UObject* hud_actor = nullptr;
@@ -318,6 +288,50 @@ class UeTracker {
   }
 } tracker;
 
+class AsyncInputChecker {
+  int pauseButton = VK_F2;
+  int advanceButton = VK_F3;
+  bool isPaused = false;
+  bool shouldAdvance = false;
+
+  void checkBinds(bool await = false) {
+    auto inputs = BindWatcherI::getInputs(await);
+    for (const auto& input : inputs) {
+      if (input == pauseButton) {
+        isPaused = !isPaused;
+      } else if (input == advanceButton) {
+        //        shouldAdvance = true;
+
+        logEvents = !logEvents;
+
+        Output::send<LogLevel::Verbose>(STR("Test Frame 1\n"));
+
+        Output::send<LogLevel::Verbose>(tracker.isUePaused() ? STR("Tracker UE Paused\n") : STR("Tracker Not UE Pasued\n"));
+        Output::send<LogLevel::Verbose>(game_state.roundActive ? STR("Gamestate Round Active\n") : STR("Gamestate Round Not Active\n"));
+        addFrame();
+
+      }
+    }
+  }
+
+public:
+  bool advancing() const { return isPaused && shouldAdvance; }
+  void pause() {
+    if(advancing()){
+      shouldAdvance = false;
+      return;
+    }
+    checkBinds();
+    while (isPaused && !shouldAdvance) {
+      checkBinds(true);
+    }
+  }
+  void reset() {
+    isPaused = false;
+    shouldAdvance = false;
+  }
+} input_checker;
+
 /* Hooks */
 
 void hook_MatchStart(AREDGameState_Battle* GameState) {
@@ -380,6 +394,7 @@ class StriveFrameData : public CppUserModBase {
     UpdateBattle_Detour = nullptr;
     MatchStart_Detour = nullptr;
 
+    Output::send<LogLevel::Verbose>(STR("Strive Frame Viewer Started\n"));
     Output::send<LogLevel::Verbose>(STR("Strive Frame Viewer Started\n"));
   }
 

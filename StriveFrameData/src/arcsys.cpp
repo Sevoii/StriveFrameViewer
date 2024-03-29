@@ -65,6 +65,18 @@ AREDGameState_Battle* getGameState() {
 
 asw_engine* asw_engine::get() {
   auto* GameState = getGameState();
+
+//  auto test = std::to_wstring(reinterpret_cast<uintptr_t>(&GameState));
+//  auto test1 = std::to_wstring(reinterpret_cast<uintptr_t>(&(GameState->Engine)));
+//  auto test2 = std::to_wstring(reinterpret_cast<uintptr_t>(&(GameState->Scene)));
+//  auto test3 = std::to_wstring(reinterpret_cast<uintptr_t>(&(GameState->Events)));
+//
+//  RC::Output::send<RC::LogLevel::Verbose>(L"Game State: " + test + L"\n");
+//  RC::Output::send<RC::LogLevel::Verbose>(L"Game State->Engine: " + test1 + L"\n");
+//  RC::Output::send<RC::LogLevel::Verbose>(L"Game State->Scene: " + test2 + L"\n");
+//  RC::Output::send<RC::LogLevel::Verbose>(L"Game State->Events: " + test3 + L"\n");
+
+
   return GameState ? GameState->Engine : nullptr;
 }
 

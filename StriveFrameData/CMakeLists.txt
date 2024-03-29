@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.18)
 set(TARGET StriveFrameData)
 project(${TARGET})
 
+set(CMAKE_CXX_STANDARD 23)
+
 set(${TARGET}_Sources
         "${CMAKE_CURRENT_SOURCE_DIR}/src/arcsys.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/bbscript.cpp"
@@ -10,7 +12,7 @@ set(${TARGET}_Sources
         "${CMAKE_CURRENT_SOURCE_DIR}/src/drawing.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/sigscan.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/bind_watcher.cpp"
-        )
+)
 
 add_library(${TARGET} SHARED ${${TARGET}_Sources})
 target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

@@ -15,9 +15,9 @@ public:
 
 class AREDGameState_Battle : public AGameState {
 public:
-  FIELD(0xBA0, class asw_engine*, Engine);
-	FIELD(0xBA8, class asw_scene*, Scene);
-  FIELD(0xBC0, class asw_events*, Events);
+  FIELD(0xBA8, class asw_engine*, Engine);
+  FIELD(0xBB0, class asw_scene*, Scene);
+  FIELD(0xBC8, class asw_events*, Events);
 };
 
 class player_block {
@@ -254,7 +254,7 @@ public:
     FIELD(0x744, int, throw_box_bottom);
     FIELD(0x748, int, throw_range);
     FIELD(0xAFC, atk_param_ex, atk_param_ex_normal);
-    FIELD(0xBA0, atk_param_ex, atk_param_ex_counter);
+    FIELD(0xBA8, atk_param_ex, atk_param_ex_counter);
     FIELD(0xC78, atk_param, atk_param_defend);
     FIELD(0x1070, atk_param_ex, atk_param_ex_defend);
     FIELD(0x1168, int, backdash_invuln);

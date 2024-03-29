@@ -744,7 +744,7 @@ struct FrameState {
       if (current_state.first.state_time > COMBO_TRUNC_TIME && current_state.second.state_time > COMBO_TRUNC_TIME) {
         prev_segment.first.trunc = current_state.first.state_time;
         prev_segment.second.trunc = current_state.second.state_time;
-        DEBUG_PRINT(STR("Truncating 1:{}, 2:{}\n"), prev_segment.trunc_one, prev_segment.trunc_two);
+//        DEBUG_PRINT(STR("Truncating 1:{}, 2:{}\n"), prev_segment.trunc_one, prev_segment.trunc_two);
         return;
       }
 
