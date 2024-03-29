@@ -12,21 +12,21 @@ function Build {
 
   Write-Host "`n##### Running CMake #####`n"
   $RCode = Run cmake.exe "-G `"Visual Studio 17 2022`" .."
-  if($RCode -ne 0) { 
+  if($RCode -ne 0) {
     Write-Host "##### Failed CMake #####"
-    return $RCode 
+    return $RCode
   }
 
   Write-Host "`n##### Running MSBuild Mod #####`n"
   $RCode = Run MSBuild.exe "/p:Configuration=Game__Shipping__Win64 .\StriveFrameData\StriveFrameData.sln"
-  if($RCode -ne 0) { 
+  if($RCode -ne 0) {
     Write-Host "`n##### Failed MSBuild Mod #####"
     return $RCode
   }
 
   Write-Host "`n##### Running MSBuild Proxy #####`n"
   $RCode = Run MSBuild.exe "/p:Configuration=Game__Shipping__Win64 .\RE-UE4SS\UE4SS\proxy_generator\proxy\proxy.sln"
-  if($RCode -ne 0) { 
+  if($RCode -ne 0) {
     Write-Host "`n##### Failed MSBuild Proxy #####"
   }
   return $RCode

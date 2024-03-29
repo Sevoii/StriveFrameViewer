@@ -379,28 +379,8 @@ class StriveFrameData : public CppUserModBase {
     ModAuthors = STR("pbozai");
     UpdateBattle_Detour = nullptr;
     MatchStart_Detour = nullptr;
-    // Do not change this unless you want to target a UE4SS version
-    // other than the one you're currently building with somehow.
-    // ModIntendedSDKVersion = STR("2.6");
 
-    register_tab(STR("Strive Frame Data"), [](CppUserModBase* instance) {
-      UE4SS_ENABLE_IMGUI();
-      // RC::Output::send<LogLevel::Warning>(STR("IMGUI Pointer: {}\n"), (void*)ImGui::GetCurrentContext());
-
-      ImGui::Text("Options:");
-
-      ImGui::Checkbox("Enable Overlay", &cfg.overlayEnabled);
-      // ImGui::Checkbox("Enable Truncation", &cfg_truncEnabled);
-      // ImGui::Checkbox("Show Dustloop Style Timings", &cfg_dustloopEnabled);
-      // ImGui::Checkbox("Enable Fade Effect", &cfg_fadeEnabled);
-      // Input Selector for reset button
-      // Input Selector for pause gameplay
-      // Input Selector for advance gameplay by a frame
-      // Add "End Time" for how long the bar should wait before thinking a combo is dropped
-
-      ImGui::Text("Help:");
-      ImGui::Text("TODO");
-    });
+    Output::send<LogLevel::Verbose>(STR("Strive Frame Viewer Started\n"));
   }
 
   ~StriveFrameData() override {}

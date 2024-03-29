@@ -33,4 +33,4 @@ Copy-Item "$UE4SS_DLL" "$Package_Dir\UE4SS.dll" | Out-Null
 Copy-Item "$Proxy_DLL" "$Package_Dir\dwmapi.dll" | Out-Null
 Copy-Item "$Project_Dir\prereqs\mods.txt" "$Package_Dir\Mods\mods.txt" | Out-Null
 Copy-Item "$Project_Dir\prereqs\UE4SS-settings.ini" "$Package_Dir\UE4SS-settings.ini" | Out-Null
-Copy-Item "$Project_Dir\prereqs\FText_Constructor.lua" "$Package_Dir\UE4SS_Signatures\FText_Constructor.lua" | Out-Null
+#Copy-Item "$Project_Dir\prereqs\FText_Constructor.lua" "$Package_Dir\UE4SS_Signatures\FText_Constructor.lua" | Out-Null

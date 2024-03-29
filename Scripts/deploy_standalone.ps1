@@ -9,8 +9,9 @@ $Package_Dir = "$Project_Dir\Packages\Standalone"
 $Install_Dir = "$Game_Dir\RED\Binaries\Win64\"
 
 Write-Host "Building Package"
-pwsh -File "$PSScriptRoot/package_standalone.ps1"
-if($LastExitCode -ne 0) { Exit $LastExitCode }
+& "$PSScriptRoot/package_standalone.ps1"
+#pwsh -File "$PSScriptRoot/package_standalone.ps1"
+#if($LastExitCode -ne 0) { Exit $LastExitCode }
 
 Write-Host "Cleaning Install Dir"
 $Cleanup_Targets = @("cache", "Mods", "UE4SS_Signatures", "UE4SS.log", "dwmapi.dll", "imgui.ini", "UE4SS.dll", "UE4SS.log", "UE4SS-settings.ini")
@@ -22,3 +23,4 @@ foreach ($Target in $Cleanup_Targets) {
 
 Write-Host "Installing Package"
 Copy-Item -Path "$Package_Dir\*" -Destination "$Install_Dir" -Recurse | Out-Null
+Write-Host "Finished Installing Package"
