@@ -300,15 +300,15 @@ class AsyncInputChecker {
       if (input == pauseButton) {
         isPaused = !isPaused;
       } else if (input == advanceButton) {
-        //        shouldAdvance = true;
+                shouldAdvance = true;
 
-        logEvents = !logEvents;
-
-        Output::send<LogLevel::Verbose>(STR("Test Frame 1\n"));
-
-        Output::send<LogLevel::Verbose>(tracker.isUePaused() ? STR("Tracker UE Paused\n") : STR("Tracker Not UE Pasued\n"));
-        Output::send<LogLevel::Verbose>(game_state.roundActive ? STR("Gamestate Round Active\n") : STR("Gamestate Round Not Active\n"));
-        addFrame();
+//        logEvents = !logEvents;
+//
+//        Output::send<LogLevel::Verbose>(STR("Test Frame 1\n"));
+//
+//        Output::send<LogLevel::Verbose>(tracker.isUePaused() ? STR("Tracker UE Paused\n") : STR("Tracker Not UE Pasued\n"));
+//        Output::send<LogLevel::Verbose>(game_state.roundActive ? STR("Gamestate Round Active\n") : STR("Gamestate Round Not Active\n"));
+//        addFrame();
 
       }
     }
@@ -394,7 +394,6 @@ class StriveFrameData : public CppUserModBase {
     UpdateBattle_Detour = nullptr;
     MatchStart_Detour = nullptr;
 
-    Output::send<LogLevel::Verbose>(STR("Strive Frame Viewer Started\n"));
     Output::send<LogLevel::Verbose>(STR("Strive Frame Viewer Started\n"));
   }
 

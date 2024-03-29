@@ -484,11 +484,11 @@ enum ID_CMNACT : uint32_t
 class asw_player : public asw_entity {
 
 public:
-    FIELD(0x60E0, int, enable_flag); // original: 0x6080 -> fixed: 0x60E0 (+0x060)
-    FIELD(0x6100, int, blockstun); // original: 0x60A0 + 0x060 = 0x6100
-    FIELD(0x98C8, int, hitstun); // original: 0x9868 + 0x060 = 0x98C8
-    FIELD(0xC2CC, ID_CMNACT, cur_cmn_action_id); // original: 0xC26C + 0x060 = 0xC2CC
-    FIELD(0xCFFC, int, slowdown_timer); // original: 0xCF9C + 0x060 = 0xCFFC
+    FIELD(0x6140, int, enable_flag); // original: 0x6080 -> fixed: 0x60E0 (+0x060)
+    FIELD(0x6160, int, blockstun); // original: 0x60A0 + 0x060 = 0x6100
+    FIELD(0x9928, int, hitstun); // original: 0x9868 + 0x060 = 0x98C8
+    FIELD(0xc32C, ID_CMNACT, cur_cmn_action_id); // original: 0xC26C + 0x060 = 0xC2CC
+    FIELD(0xD05C, int, slowdown_timer); // original: 0xCF9C + 0x060 = 0xCFFC
 
     int calc_advantage();
     bool is_in_hitstun() const;

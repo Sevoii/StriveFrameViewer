@@ -498,6 +498,15 @@ class PlayerState {
     const bool knockdown = player.is_knockdown();
     const bool player_active = player.is_active() && (player.hitbox_count > 0 || player.throw_range >= 0);
 
+//    Output::send<LogLevel::Verbose>(L"\n\n\n\n------");
+//    Output::send<LogLevel::Verbose>(normal_canact ? L"Normal Can Act: true\n" : L"Normal Can Act: false\n");
+//    Output::send<LogLevel::Verbose>(stance_canact ? L"Stance Can Act: true\n" : L"Stance Can Act: false\n");
+//    Output::send<LogLevel::Verbose>(block_stunned ? L"Block Stunned: true\n" : L"Block Stunned: false\n");
+//    Output::send<LogLevel::Verbose>(hit_stunned ? L"Hit Stunned: true\n" : L"Hit Stunned: false\n");
+//    Output::send<LogLevel::Verbose>(knockdown ? L"Knockdown: true\n" : L"Knockdown: false\n");
+//    Output::send<LogLevel::Verbose>(player_active ? L"Player Active: true\n" : L"Player Active: false\n");
+
+
     bool projectile_active = false;
     for (auto& iter : ptracker.ownership) {
       if (iter.second.root_parent != &player || !shouldBeActive(iter)) continue;

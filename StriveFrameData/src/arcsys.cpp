@@ -277,6 +277,15 @@ bool asw_player::is_in_hitstun() const {
 }
 
 bool asw_player::is_in_blockstun() const {
+//  RC::Output::send<RC::LogLevel::Verbose>(L"----\n");
+//  RC::Output::send<RC::LogLevel::Verbose>(L"cur_cmn_action_id: " + std::to_wstring(cur_cmn_action_id));
+////  RC::Output::send<RC::LogLevel::Verbose>(L"Enable Normal Attack: " + std::to_wstring(ENABLE_NORMALATTACK));
+//
+//  RC::Output::send<RC::LogLevel::Verbose>(L"cur_cmn_action_id memory loc: " + std::to_wstring(reinterpret_cast<std::uintptr_t>(&enable_flag)) + L"\n");
+//  RC::Output::send<RC::LogLevel::Verbose>(L"----\n");
+
+
+
   switch (cur_cmn_action_id) {
     case ID_CmnActMidGuardPre:
     case ID_CmnActMidGuardLoop:
