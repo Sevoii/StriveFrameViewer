@@ -20,9 +20,9 @@ public:
 
 class AREDGameState_Battle : public AGameState {
 public:
-  FIELD(0xBA0, class asw_engine*, Engine);
-	FIELD(0xBA8, class asw_scene*, Scene);
-  FIELD(0xBC0, class asw_events*, Events);
+  FIELD(0xBA8, class asw_engine*, Engine);
+	FIELD(0xBB0, class asw_scene*, Scene);
+  FIELD(0xBC8, class asw_events*, Events);
 };
 
 class player_block {
@@ -215,7 +215,7 @@ static_assert(sizeof(atk_param_ex) == 0xB8);
 class ActionReqInfo {
   char pad[0x50];
 public:
-  FIELD(0x44, int, skill_id); 
+  FIELD(0x44, int, skill_id);
 };
 
 enum SKILL_ACTIVE_FLAG
@@ -254,7 +254,7 @@ public:
 // new MDC size: 0x1aafc + 0x1680 = 0x1C17C
 // old m_SkillInfoCount offset: 0x18A1C
 // new m_SkillInfoCount offset: 0x18A1C + 0x1680 = 0x1A09C
-class MoveDataCollection { 
+class MoveDataCollection {
   char pad[0x1C17C];
 public:
   ARRAY_FIELD(0x0, MoveData[180], moves); // m_SkillInfo
@@ -272,12 +272,12 @@ public:
 	FIELD(0x78, hitbox*, hitboxes);
 	FIELD(0x10C, int, hurtbox_count);
 	FIELD(0x110, int, hitbox_count);
-	//   _____    ____    _    _   _   _   _______   ______   _____  
-	//  / ____|  / __ \  | |  | | | \ | | |__   __| |  ____| |  __ \ 
+	//   _____    ____    _    _   _   _   _______   ______   _____
+	//  / ____|  / __ \  | |  | | | \ | | |__   __| |  ____| |  __ \
 	// | |      | |  | | | |  | | |  \| |    | |    | |__    | |__) |
-	// | |      | |  | | | |  | | | . ` |    | |    |  __|   |  _  / 
-	// | |____  | |__| | | |__| | | |\  |    | |    | |____  | | \ \ 
-	//  \_____|  \____/   \____/  |_| \_|    |_|    |______| |_|  \_\ 
+	// | |      | |  | | | |  | | | . ` |    | |    |  __|   |  _  /
+	// | |____  | |__| | | |__| | | |\  |    | |    | |____  | | \ \
+	//  \_____|  \____/   \____/  |_| \_|    |_|    |______| |_|  \_\
 	BIT_FIELD(0x1A8, 0x4000000, cinematic_counter);
 	FIELD(0x1C4, int, action_time);
 	FIELD(0x1E0, int, act_reg_0);
@@ -331,7 +331,7 @@ public:
 
     // m_ActionRequestInfo, Ghidra: 0x3674, 0x118 offset?)
     // Ghidra + 0x118 = 0x378C (from state_name)
-    FIELD(0x378C, ActionReqInfo, action_info); 
+    FIELD(0x378C, ActionReqInfo, action_info);
 
     // m_ActionRequestInfo, Ghidra: 0x36c4, 0x118 offset?)
     // Ghidra + 0x118 = 0x37DC (from state_name)
@@ -579,18 +579,17 @@ enum PLATTACK_FLAG
 class asw_player : public asw_entity {
 
 public:
-    
-    FIELD(0x60E0, int, enable_flag); // original: 0x6080 -> fixed: 0x60E0 (+0x060)
-    FIELD(0x60EC, int, attack_flag); // original: 0x5F90 -> fixed: 0x60EC (+0x060)
-    FIELD(0x6100, int, blockstun); // original: 0x60A0 + 0x060 = 0x6100
-    FIELD(0x98C8, int, hitstun); // original: 0x9868 + 0x060 = 0x98C8
-    FIELD(0x993C, int, ply_PushColHeightLowAir);
-    FIELD(0xC2CC, ID_CMNACT, cur_cmn_action_id); // original: 0xC26C + 0x060 = 0xC2CC
-    FIELD(0xCFFC, int, slowdown_timer); // original: 0xCF9C + 0x060 = 0xCFFC
-    FIELD(0xFA60, MoveDataCollection, move_datas); 
-    FIELD(0xF230, int, afro); // m_IsAfro Header: 0xed28, Offset: 0x508 
-	  FIELD(0xF268, int, afroW);
-	  FIELD(0xF26C, int, afroH);
+    FIELD(0x6140, int, enable_flag); // original: 0x6080 -> fixed: 0x60E0 (+0x060)
+    FIELD(0x614c, int, attack_flag); // original: 0x5F90 -> fixed: 0x60EC (+0x060)
+    FIELD(0x6160, int, blockstun); // original: 0x60A0 + 0x060 = 0x6100
+    FIELD(0x9928, int, hitstun); // original: 0x9868 + 0x060 = 0x98C8
+    FIELD(0x999c, int, ply_PushColHeightLowAir);
+    FIELD(0xc32c, ID_CMNACT, cur_cmn_action_id); // original: 0xC26C + 0x060 = 0xC2CC
+    FIELD(0xd05c, int, slowdown_timer); // original: 0xCF9C + 0x060 = 0xCFFC
+    FIELD(0xfac0, MoveDataCollection, move_datas);
+    FIELD(0xf290, int, afro); // m_IsAfro Header: 0xed28, Offset: 0x508
+    FIELD(0xf2c8, int, afroW);
+    FIELD(0xf2cc, int, afroH);
 
     int calc_advantage();
     bool is_in_hitstun() const;
