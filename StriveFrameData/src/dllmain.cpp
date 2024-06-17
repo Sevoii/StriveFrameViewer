@@ -266,8 +266,8 @@ void hook_AHUDPostRender(void *hud) {
     return;
   }
 
-  if (input_checker.advancing()) return;
-
+  // Seems to be not necessary?? I couldn't figure out any differences
+//  if (input_checker.advancing()) return;
   orig_AHUDPostRender(hud);
 
   if (!DrawTool::instance().update(hud)) return;
