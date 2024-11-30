@@ -25,11 +25,11 @@ class BindWorker {
 
 public:
   BindWorker() {
-    isRunning = true;
+    isRunning     = true;
     worker_thread = std::thread(&BindWorker::run, this);
   }
   ~BindWorker() {
-    isRunning = false;
+    isRunning   = false;
     auto handle = GetThreadId(worker_thread.native_handle());
     PostThreadMessage(handle, WM_USER, 0, 0);
     worker_thread.join();

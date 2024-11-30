@@ -9,7 +9,7 @@ struct Palette {
 };
 
 struct CurrentOptions {
-  const Palette& palette;
+  const Palette &palette;
   bool show_fade;
   bool show_delim;
   bool show_cancels;
@@ -26,21 +26,21 @@ struct PressedKeys {
   bool rotate_left;
 };
 
-
 class ModMenu {
   DrawContext tool;
 
-//  std::vector<int> settings;
+  //  std::vector<int> settings;
 
-  bool is_showing = false;
+  bool is_showing     = false;
   int cursor_position = 0;
 
-  void changeSetting(size_t idx, bool right=true);
+  void changeSetting(size_t idx, bool right = true);
 
   ModMenu();
+
 public:
   ~ModMenu();
-  static ModMenu& instance();
+  static ModMenu &instance();
 
   void update(PressedKeys data);
   void draw();

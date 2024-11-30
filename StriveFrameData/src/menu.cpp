@@ -7,16 +7,16 @@ class RedInputChecker {
 
 public:
   enum InputFlag {
-    IF_Up = 0x1,
-    IF_Down = 0x2,
-    IF_Left = 0x4,
+    IF_Up    = 0x1,
+    IF_Down  = 0x2,
+    IF_Left  = 0x4,
     IF_Right = 0x8,
-    IF_P = 0x10,
-    IF_K = 0x20,
-    IF_S = 0x40,
-    IF_H = 0x80,
-    IF_Dust = 0x100,
-    IF_ANY = 0x1FF
+    IF_P     = 0x10,
+    IF_K     = 0x20,
+    IF_S     = 0x40,
+    IF_H     = 0x80,
+    IF_Dust  = 0x100,
+    IF_ANY   = 0x1FF
   };
   RedInputChecker(asw_inputs &inputs) {
     novel_inputs = inputs.m_CurRecFlg & (~inputs.m_PreRecFlg);
@@ -110,8 +110,7 @@ namespace Settings {
   SettingsEntry CROSSUP_ENABABLED = SettingsEntry{
       OptionData{L"Show Crossup: ", 2, {L"<  Disabled  >", L"<  Enabled   >"}},
       "crossup_enabled",
-      0
-  };
+      0};
 
   std::array<SettingsEntry *, 9> settings = {
       &FRAMEBAR,
@@ -127,11 +126,11 @@ namespace Settings {
   };
 
   const std::filesystem::path WORKING_DIRECTORY = UE4SSProgram::get_program().get_working_directory();
-  const auto CONFIG_PATH = WORKING_DIRECTORY / "StriveFrameViewer.txt";
+  const auto CONFIG_PATH                        = WORKING_DIRECTORY / "StriveFrameViewer.txt";
 
   // TODO: figure out if I want to statically define or just do a name find
   size_t FRAMEBAR_INDEX = 0;
-  size_t HITBOX_INDEX = 1;
+  size_t HITBOX_INDEX   = 1;
 
   int indexById(const std::string &id_) {
     for (int i = 0; i < settings.size(); i++) {
@@ -217,20 +216,20 @@ namespace {
 
   constexpr double CENTER_X_RATIO = 0.5f;
   constexpr double CENTER_Y_RATIO = 0.5f;
-  constexpr double MENU_PADDING = 30;
-  constexpr double OPTION_HEIGHT = 60;
+  constexpr double MENU_PADDING   = 30;
+  constexpr double OPTION_HEIGHT  = 60;
   constexpr double OPTION_SPACING = 20;
-  constexpr double COL_SPACING = 20;
+  constexpr double COL_SPACING    = 20;
 
   double TITLE_WIDTH = buildTitleWidth() * 24;
   double VALUE_WIDTH = buildValueWidth() * 24;
-  double MENU_WIDTH = TITLE_WIDTH + COL_SPACING + VALUE_WIDTH + (2 * MENU_PADDING);
+  double MENU_WIDTH  = TITLE_WIDTH + COL_SPACING + VALUE_WIDTH + (2 * MENU_PADDING);
 
   double MENU_HEIGHT = 2 * MENU_PADDING + OPTION_COUNT * (OPTION_HEIGHT + OPTION_SPACING) - OPTION_SPACING;
-  double MENU_TOP = -MENU_HEIGHT / 2;
-  double MENU_LEFT = -MENU_WIDTH / 2;
+  double MENU_TOP    = -MENU_HEIGHT / 2;
+  double MENU_LEFT   = -MENU_WIDTH / 2;
   double OPTION_LEFT = MENU_LEFT + MENU_PADDING;
-  double VALUE_LEFT = OPTION_LEFT + TITLE_WIDTH + COL_SPACING;
+  double VALUE_LEFT  = OPTION_LEFT + TITLE_WIDTH + COL_SPACING;
 
   FLinearColor background_color{0.2f, 0.2f, 0.2f, 0.8f};
   FLinearColor cursor_color{0.5f, 0.0f, 0.0f, 1.0f};
@@ -304,7 +303,7 @@ size_t rotateVal(size_t val, bool positive, size_t max) {
 // TODO later: maybe move this somewhere else?
 // TODO later: maybe instead of idx do SettingsEntry entry
 void ModMenu::changeSetting(size_t idx, bool right) {
-  auto &setting = Settings::settings[idx];
+  auto &setting  = Settings::settings[idx];
   setting->value = rotateVal(setting->value, right, setting->display.count);
 
   Settings::saveConfig();
@@ -329,11 +328,11 @@ void ModMenu::update(PressedKeys data) {
   if (!is_showing) return;
 
   // get button inputs and update cursor
-//  auto checker = RedInputChecker(asw_engine::get()->inputs[0]);
-//  if (checker.checkInput(RedInputChecker::IF_Up)) cursor_position = rotateVal(cursor_position, false, OPTION_COUNT);
-//  if (checker.checkInput(RedInputChecker::IF_Down)) cursor_position = rotateVal(cursor_position, true, OPTION_COUNT);
-//  if (checker.checkInput(RedInputChecker::IF_Left)) changeSetting(cursor_position, false);
-//  if (checker.checkInput(RedInputChecker::IF_Right)) changeSetting(cursor_position, true);
+  //  auto checker = RedInputChecker(asw_engine::get()->inputs[0]);
+  //  if (checker.checkInput(RedInputChecker::IF_Up)) cursor_position = rotateVal(cursor_position, false, OPTION_COUNT);
+  //  if (checker.checkInput(RedInputChecker::IF_Down)) cursor_position = rotateVal(cursor_position, true, OPTION_COUNT);
+  //  if (checker.checkInput(RedInputChecker::IF_Left)) changeSetting(cursor_position, false);
+  //  if (checker.checkInput(RedInputChecker::IF_Right)) changeSetting(cursor_position, true);
   if (data.go_up) cursor_position = rotateVal(cursor_position, false, OPTION_COUNT);
   if (data.go_down) cursor_position = rotateVal(cursor_position, true, OPTION_COUNT);
   if (data.rotate_left) changeSetting(cursor_position, false);
@@ -353,7 +352,7 @@ void ModMenu::draw() {
 
   for (size_t idx = 0; idx < OPTION_COUNT; idx++) {
     auto &relevant = Settings::settings[idx]->display;
-    double top = MENU_TOP + MENU_PADDING + idx * (OPTION_HEIGHT + OPTION_SPACING);
+    double top     = MENU_TOP + MENU_PADDING + idx * (OPTION_HEIGHT + OPTION_SPACING);
     tool.drawOutlinedText(OPTION_LEFT, top, FString(relevant.title), 2.0);
     tool.drawOutlinedText(VALUE_LEFT, top, FString(relevant.values[Settings::settings[idx]->value]), 2.0);
   }
@@ -368,7 +367,7 @@ bool ModMenu::dashEnabled() const { return Settings::SHOW_DASH_FRAMES.value; }
 bool ModMenu::crossupEnabled() const { return Settings::CROSSUP_ENABABLED.value; }
 int ModMenu::pauseType() const { return Settings::PAUSE_TYPE.value; }
 
-const int delayAmounts [4] = {0, 20, 30, 60};
+const int delayAmounts[4] = {0, 20, 30, 60};
 int ModMenu::delayAmount() const { return delayAmounts[Settings::DELAY_AMOUNT.value]; }
 
 CurrentOptions ModMenu::getScheme() const {

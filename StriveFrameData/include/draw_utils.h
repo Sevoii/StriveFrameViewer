@@ -128,22 +128,22 @@ namespace DrawParams {
 }
 
 class DrawTool {
-  bool valid = false;
-  Unreal::UObject *ref_hud = nullptr;
-  Unreal::UObject *ref_player = nullptr;
-  Unreal::UObject *ref_font = nullptr;
-  Unreal::UFunction *ref_getsize = nullptr;
-  Unreal::UFunction *ref_project = nullptr;
+  bool valid                      = false;
+  Unreal::UObject *ref_hud        = nullptr;
+  Unreal::UObject *ref_player     = nullptr;
+  Unreal::UObject *ref_font       = nullptr;
+  Unreal::UFunction *ref_getsize  = nullptr;
+  Unreal::UFunction *ref_project  = nullptr;
   Unreal::UFunction *ref_drawrect = nullptr;
   Unreal::UFunction *ref_drawtext = nullptr;
   Unreal::UFunction *ref_drawline = nullptr;
 
-  double screen_width = 0.0;
+  double screen_width  = 0.0;
   double screen_height = 0.0;
-  double units = 0.0;
+  double units         = 0.0;
 
   DrawTool();
-  DrawTool(DrawTool &) = delete;
+  DrawTool(DrawTool &)        = delete;
   DrawTool(const DrawTool &&) = delete;
 
 public:
@@ -221,17 +221,17 @@ public:
 
   // params are in draw space coordinates
   void drawRect(int x, int y, int width, int height, const FLinearColor &color) const {
-    double units = tool->getUnits();
-    double prj_x = center_offset_x + (units * x);
-    double prj_y = center_offset_y + (units * y);
-    double prj_width = units * width;
+    double units      = tool->getUnits();
+    double prj_x      = center_offset_x + (units * x);
+    double prj_y      = center_offset_y + (units * y);
+    double prj_width  = units * width;
     double prj_height = units * height;
     tool->drawRect(prj_x, prj_y, prj_width, prj_height, color);
   }
   void drawOutlinedText(int x, int y, const Unreal::FString &text, double scale) const {
-    double units = tool->getUnits();
-    double prj_x = center_offset_x + (units * x);
-    double prj_y = center_offset_y + (units * y);
+    double units     = tool->getUnits();
+    double prj_x     = center_offset_x + (units * x);
+    double prj_y     = center_offset_y + (units * y);
     double prj_scale = units * scale;
     tool->drawOutlinedText(prj_x, prj_y, text, prj_scale);
   }

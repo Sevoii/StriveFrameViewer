@@ -12,16 +12,16 @@
 namespace {
   /* Combo Triger Settings */
   constexpr int COMBO_ENDED_TIME = 20; // time idle before combo is considered over
-  constexpr int COMBO_NUM_TIME = 9;    // minimum time of unchanging states to display state length
+  constexpr int COMBO_NUM_TIME   = 9;  // minimum time of unchanging states to display state length
   constexpr int COMBO_TRUNC_TIME = 10; // max segments for unchanging state, after which the segments are truncated
-  constexpr double COLOR_DECAY = 0.9f;
+  constexpr double COLOR_DECAY   = 0.9f;
 
   /* Draw-Space Settings */
-  constexpr int FADE_DISTANCE = 5;
-  constexpr int SEG_WIDTH = 20;
-  constexpr int SEG_HEIGHT = 36;
-  constexpr int SEG_SPACING = 4;
-  constexpr int BAR_SPACING = 8;
+  constexpr int FADE_DISTANCE    = 5;
+  constexpr int SEG_WIDTH        = 20;
+  constexpr int SEG_HEIGHT       = 36;
+  constexpr int SEG_SPACING      = 4;
+  constexpr int BAR_SPACING      = 8;
   constexpr int BORDER_THICKNESS = 3;
   constexpr double BAR_TEXT_SIZE = 1.4;
 
@@ -30,23 +30,23 @@ namespace {
   constexpr double CENTER_Y_RATIO = 0.8f;
 
   /* Draw-Space Calculations */
-  constexpr int SEG_TOTAL = SEG_SPACING + SEG_WIDTH;
-  constexpr int BAR_WIDTH = (FRAME_SEGMENTS * SEG_TOTAL) + SEG_SPACING;
-  constexpr int BAR_HEIGHT = 2 * SEG_SPACING + SEG_HEIGHT;
-  constexpr int BAR_RIGHT = BAR_WIDTH / 2;
-  constexpr int BAR_LEFT = -1 * BAR_RIGHT;
-  constexpr int BAR_TWO_TOP = BAR_SPACING / 2;
-  constexpr int BAR_TWO_CENTER = BAR_TWO_TOP + (BAR_HEIGHT / 2);
-  constexpr int BAR_TWO_BOTTOM = BAR_TWO_TOP + BAR_HEIGHT;
-  constexpr int BAR_ONE_BOTTOM = -1 * BAR_TWO_TOP;
-  constexpr int BAR_ONE_CENTER = -1 * BAR_TWO_CENTER;
-  constexpr int BAR_ONE_TOP = -1 * BAR_TWO_BOTTOM;
-  constexpr int SEGS_TWO_TOP = BAR_TWO_TOP + SEG_SPACING;
+  constexpr int SEG_TOTAL       = SEG_SPACING + SEG_WIDTH;
+  constexpr int BAR_WIDTH       = (FRAME_SEGMENTS * SEG_TOTAL) + SEG_SPACING;
+  constexpr int BAR_HEIGHT      = 2 * SEG_SPACING + SEG_HEIGHT;
+  constexpr int BAR_RIGHT       = BAR_WIDTH / 2;
+  constexpr int BAR_LEFT        = -1 * BAR_RIGHT;
+  constexpr int BAR_TWO_TOP     = BAR_SPACING / 2;
+  constexpr int BAR_TWO_CENTER  = BAR_TWO_TOP + (BAR_HEIGHT / 2);
+  constexpr int BAR_TWO_BOTTOM  = BAR_TWO_TOP + BAR_HEIGHT;
+  constexpr int BAR_ONE_BOTTOM  = -1 * BAR_TWO_TOP;
+  constexpr int BAR_ONE_CENTER  = -1 * BAR_TWO_CENTER;
+  constexpr int BAR_ONE_TOP     = -1 * BAR_TWO_BOTTOM;
+  constexpr int SEGS_TWO_TOP    = BAR_TWO_TOP + SEG_SPACING;
   constexpr int SEGS_TWO_BOTTOM = BAR_TWO_BOTTOM - SEG_SPACING;
-  constexpr int SEGS_ONE_TOP = BAR_ONE_TOP + SEG_SPACING;
+  constexpr int SEGS_ONE_TOP    = BAR_ONE_TOP + SEG_SPACING;
   constexpr int SEGS_ONE_BOTTOM = BAR_ONE_BOTTOM - SEG_SPACING;
-  constexpr int INFO_ONE_LOC = BAR_ONE_TOP - BAR_HEIGHT;
-  constexpr int INFO_TWO_LOC = BAR_TWO_BOTTOM + 2;
+  constexpr int INFO_ONE_LOC    = BAR_ONE_TOP - BAR_HEIGHT;
+  constexpr int INFO_TWO_LOC    = BAR_TWO_BOTTOM + 2;
 
   /* Unreal Constants */
   FLinearColor color_invisible{1.f, 1.f, 1.f, 0.f};
@@ -79,20 +79,19 @@ std::wstring makeStatsText(const MoveStats &stats, int advantage) {
   return builder.str();
 }
 
-std::string safeRead(const char* target){
-  const size_t len = strnlen_s(target,30);
-  return std::string(target,len);
+std::string safeRead(const char *target) {
+  const size_t len = strnlen_s(target, 30);
+  return std::string(target, len);
 }
 
+bool hasCancelOptions(const asw_player &player) {
+  const auto &datas = player.move_datas;
 
-bool hasCancelOptions(const asw_player& player) {
-  const auto& datas = player.move_datas;
-
-  for(size_t idx = 0; idx < datas.move_count; ++idx){
-    const auto& move = datas.moves[idx];
-    if((move.active_flag & SAF_FLEX_CHAIN && player.can_whiff_cancel()) || (move.active_flag & SAF_CHAIN && player.can_gatling_cancel())){
+  for (size_t idx = 0; idx < datas.move_count; ++idx) {
+    const auto &move = datas.moves[idx];
+    if ((move.active_flag & SAF_FLEX_CHAIN && player.can_whiff_cancel()) || (move.active_flag & SAF_CHAIN && player.can_gatling_cancel())) {
       auto name = convertToWide(safeRead(datas.moves[idx].get_name()));
-//      RC::Output::send<LogLevel::Warning>(STR("    whiff: Idx: {}, Name: {}\n"), idx, name);
+      //      RC::Output::send<LogLevel::Warning>(STR("    whiff: Idx: {}, Name: {}\n"), idx, name);
       return true;
     }
   }
@@ -159,7 +158,7 @@ void ProjectileTracker::processFrame() {
     for (auto &iter : ownership) {
       if (iter.second.root_parent == focus) {
         iter.second.root_parent = parent;
-        iter.second.old = old;
+        iter.second.old         = old;
       }
     }
   }
@@ -185,14 +184,14 @@ void ProjectileTracker::debugDump() {
   auto format = STR("Prjt script:{}, sprite:{}, ptr:{}, par:{}, pt:{}, old:{}, dmg:{}, hit:{}, act:{}\n");
   for (auto &iter : ownership) {
     auto *focus = iter.first, *top_parent = iter.second.root_parent;
-    auto bb_script = convertToWide(focus->get_BB_state());
-    auto sprite = convertToWide(focus->get_sprite_name());
-    void *direct_parent = (void *)iter.second.direct_parent;
+    auto bb_script             = convertToWide(focus->get_BB_state());
+    auto sprite                = convertToWide(focus->get_sprite_name());
+    void *direct_parent        = (void *)iter.second.direct_parent;
     const wchar_t *parent_type = (top_parent == player_one) ? L"ONE" : ((top_parent == player_two) ? L"TWO" : L"FREE");
-    const wchar_t *age = age_vals[iter.second.old];
-    int dmg = focus->atk_param_hit.damage;
-    int hitbox_count = focus->hitbox_count;
-    const wchar_t *active = focus->is_active() ? L"Y" : L"N";
+    const wchar_t *age         = age_vals[iter.second.old];
+    int dmg                    = focus->atk_param_hit.damage;
+    int hitbox_count           = focus->hitbox_count;
+    const wchar_t *active      = focus->is_active() ? L"Y" : L"N";
 
     RC::Output::send<LogLevel::Warning>(format, bb_script, sprite, (void *)focus, direct_parent, parent_type, age, dmg, hitbox_count, active);
   }
@@ -261,10 +260,10 @@ void MoveStats::update(const PlayerState &current) {
 }
 
 void PlayerData::resetFrames() {
-  current_state.state_time = 1;
+  current_state.state_time  = 1;
   previous_state.state_time = 1;
-  working_stats = MoveStats();
-  displayed_stats = MoveStats();
+  working_stats             = MoveStats();
+  displayed_stats           = MoveStats();
   for (int idx = 0; idx < FRAME_SEGMENTS; ++idx)
     segments[idx] = FrameInfo();
 }
@@ -274,7 +273,7 @@ void PlayerData::resetFrames() {
 
 void PlayerData::shift(const PlayerState &next) {
   previous_state = current_state;
-  current_state = next;
+  current_state  = next;
 }
 void PlayerData::updateMove() {
   if (current_state.time > 1) {
@@ -290,12 +289,12 @@ void PlayerData::updateMove() {
 void PlayerData::updateSegment(int prev_idx, int curr_idx) {
   // previous section has ended
   auto &previous = segments[prev_idx];
-  auto &active = segments[curr_idx];
+  auto &active   = segments[curr_idx];
   previous.trunc = 0;
 
   active.state = current_state.type;
-  active.mods = MT_None;
-  if(current_state.can_cancel){
+  active.mods  = MT_None;
+  if (current_state.can_cancel) {
     active.mods |= MT_Cancellable;
   }
 
@@ -313,7 +312,7 @@ void PlayerData::updateSegment(int prev_idx, int curr_idx) {
     }
   } else {
     DEBUG_PRINT(STR("Same Section for One\n"));
-    if(previous_state.can_cancel != current_state.can_cancel && previous_state.trunc_time > COMBO_NUM_TIME){
+    if (previous_state.can_cancel != current_state.can_cancel && previous_state.trunc_time > COMBO_NUM_TIME) {
       previous.trunc = previous_state.state_time;
     }
     // we are drawing this section, fade its color slightly
@@ -321,7 +320,7 @@ void PlayerData::updateSegment(int prev_idx, int curr_idx) {
     active.decay = previous.decay * COLOR_DECAY;
   }
 
-  if(current_state.anyProjectiles()){
+  if (current_state.anyProjectiles()) {
     active.mods |= MT_Projectile;
   }
 
@@ -333,11 +332,11 @@ void PlayerData::updateSegment(int prev_idx, int curr_idx) {
 void PlayerData::initSegment(int curr_idx) {
   auto &active = segments[curr_idx];
   active.state = current_state.type;
-  active.mods = MT_None;
-  if(current_state.anyProjectiles()){
+  active.mods  = MT_None;
+  if (current_state.anyProjectiles()) {
     active.mods |= MT_Projectile;
   }
-  if(current_state.can_cancel){
+  if (current_state.can_cancel) {
     active.mods |= MT_Cancellable;
   }
 }
@@ -349,14 +348,14 @@ void PlayerData::truncSegment(int prev_idx) {
 void PlayerData::fadeSegment(int fade_idx) {
   auto &fade_segment = segments[fade_idx];
   fade_segment.state = PST_None;
-  fade_segment.mods = MT_None;
+  fade_segment.mods  = MT_None;
 }
 
 // ############################################################
 // PlayerState
 
 PlayerState::PlayerState(asw_player &player, asw_player &opp, const PlayerState &last, bool combo_active, bool show_cu) {
-  time = player.action_time;
+  time         = player.action_time;
   show_crossup = show_cu;
 
   if (player.pos_x < opp.pos_x) {
@@ -380,11 +379,11 @@ PlayerState::PlayerState(asw_player &player, asw_player &opp, const PlayerState 
   const bool normal_canact = player.can_act();
   const bool stance_canact = player.is_stance_idle();
   const bool block_stunned = player.is_in_blockstun() || player.is_stagger() || player.is_guard_crush();
-  const bool hit_stunned = player.is_in_hitstun();
-  const bool knockdown = player.is_knockdown();
+  const bool hit_stunned   = player.is_in_hitstun();
+  const bool knockdown     = player.is_knockdown();
   const bool player_active = player.is_active() && (player.hitbox_count > 0 || player.throw_range >= 0);
   const bool jump_recovery = player.is_jump_recovery();
-  const bool is_dash = player.is_fdash();
+  const bool is_dash       = player.is_fdash();
 
   bool projectile_active = false;
   for (auto &iter : ptracker.ownership) {
@@ -416,42 +415,42 @@ PlayerState::PlayerState(asw_player &player, asw_player &opp, const PlayerState 
     type = PST_Dash;
   }
 
-//  can_cancel = (type == PST_Recovering || type == PST_Busy) && hasCancelOptions(player);
+  //  can_cancel = (type == PST_Recovering || type == PST_Busy) && hasCancelOptions(player);
 
-//   active stall prevents the first active frame (before the hit is registered) from appearing active
-//   this helps match Dustloop and looks more intuitive
+  //   active stall prevents the first active frame (before the hit is registered) from appearing active
+  //   this helps match Dustloop and looks more intuitive
   if (player_active || projectile_active) {
     active_stall = true;
   }
 
-//   state_time is used for determining how long was spent in each PST state for a single BB state script
-//   type != PST_Busy to prevent interuptible post move animations (that are idle equivalent) or chained stuns from breaking segments
-//   make sure not to trunc sideswap stuff
+  //   state_time is used for determining how long was spent in each PST state for a single BB state script
+  //   type != PST_Busy to prevent interuptible post move animations (that are idle equivalent) or chained stuns from breaking segments
+  //   make sure not to trunc sideswap stuff
   if ((same_script || type != PST_Busy) && last.type == type && (((side_state < 0) == (last.side_state < 0)) || !show_cu)) {
-    state_time = (last.state_time < 1000) ? last.state_time + 1 : last.state_time;
+    state_time        = (last.state_time < 1000) ? last.state_time + 1 : last.state_time;
     bool cancel_break = ModMenu::instance().cancelEnabled() && last.can_cancel != can_cancel;
-    trunc_time = cancel_break ? 1 : last.trunc_time + 1;
+    trunc_time        = cancel_break ? 1 : last.trunc_time + 1;
   } else {
     state_time = 1;
     trunc_time = 1;
   }
 
-//  if constexpr (ENABLE_STATE_DEBUG) {
-//    auto format = STR("script:{}, time:{}, sprite:{}, can:{}, stance:{} bstun:{}, hstun:{}, plact:{}, pjact:{}, any:{}, st:{}, cin:{}, hbc:{}, trw:{}, f:{}, c:{}, atk: {}\n");
-//    std::wstring local_script = convertToWide(player.get_BB_state());
-//    std::wstring local_sprite = convertToWide(player.get_sprite_name());
-//    auto nca = normal_canact ? L"Y" : L"N";
-//    auto sca = stance_canact ? L"Y" : L"N";
-//    auto bs = block_stunned ? L"Y" : L"N";
-//    auto hs = hit_stunned ? L"Y" : L"N";
-//    auto pla = player_active ? L"Y" : L"N";
-//    auto pja = projectile_active ? L"Y" : L"N";
-//    auto aja = any_prjt ? L"Y" : L"N";
-//    auto cin = player.cinematic_counter ? L"Y" : L"N";
-//    auto flex = player.can_whiff_cancel() ? L"Y" : L"N";
-//    auto cancel = player.can_gatling_cancel()  ? L"Y" : L"N";
-//    RC::Output::send<LogLevel::Warning>(format, local_script, time, local_sprite, nca, sca, bs, hs, pla, pja, aja, state_time, cin, player.hitbox_count, player.throw_range, flex, cancel, player.attack_flag);
-//  }
+  //  if constexpr (ENABLE_STATE_DEBUG) {
+  //    auto format = STR("script:{}, time:{}, sprite:{}, can:{}, stance:{} bstun:{}, hstun:{}, plact:{}, pjact:{}, any:{}, st:{}, cin:{}, hbc:{}, trw:{}, f:{}, c:{}, atk: {}\n");
+  //    std::wstring local_script = convertToWide(player.get_BB_state());
+  //    std::wstring local_sprite = convertToWide(player.get_sprite_name());
+  //    auto nca = normal_canact ? L"Y" : L"N";
+  //    auto sca = stance_canact ? L"Y" : L"N";
+  //    auto bs = block_stunned ? L"Y" : L"N";
+  //    auto hs = hit_stunned ? L"Y" : L"N";
+  //    auto pla = player_active ? L"Y" : L"N";
+  //    auto pja = projectile_active ? L"Y" : L"N";
+  //    auto aja = any_prjt ? L"Y" : L"N";
+  //    auto cin = player.cinematic_counter ? L"Y" : L"N";
+  //    auto flex = player.can_whiff_cancel() ? L"Y" : L"N";
+  //    auto cancel = player.can_gatling_cancel()  ? L"Y" : L"N";
+  //    RC::Output::send<LogLevel::Warning>(format, local_script, time, local_sprite, nca, sca, bs, hs, pla, pja, aja, state_time, cin, player.hitbox_count, player.throw_range, flex, cancel, player.attack_flag);
+  //  }
 }
 
 // ############################################################
@@ -462,31 +461,31 @@ FrameBar::Data::Data()
   resetFrames();
 }
 
-void FrameBar::Data::drawFrame(const CurrentOptions& scheme, const FrameInfo &info, int top, int left) {
+void FrameBar::Data::drawFrame(const CurrentOptions &scheme, const FrameInfo &info, int top, int left) {
   if (info.state != PST_None) {
     if (info.mods & MT_Projectile) {
       tool.drawRect(left - BORDER_THICKNESS, top - BORDER_THICKNESS, SEG_WIDTH + 2 * BORDER_THICKNESS, SEG_HEIGHT + 2 * BORDER_THICKNESS, scheme.palette.background_color);
     }
-    
+
     auto color = scheme.palette.state_colors[info.state];
-    if(scheme.show_fade) color = color * info.decay;
+    if (scheme.show_fade) color = color * info.decay;
     tool.drawRect(left, top, SEG_WIDTH, SEG_HEIGHT, color);
 
-    if(scheme.show_delim && info.mods & MT_SegmentEnd) {
+    if (scheme.show_delim && info.mods & MT_SegmentEnd) {
       tool.drawRect(left + SEG_WIDTH, top - BORDER_THICKNESS, BORDER_THICKNESS, SEG_HEIGHT + 2 * BORDER_THICKNESS, color_white);
     }
 
-    if(scheme.show_cancels && info.mods & MT_Cancellable) {
+    if (scheme.show_cancels && info.mods & MT_Cancellable) {
       constexpr int CANCEL_HEIGHT = SEG_HEIGHT / 3;
       tool.drawRect(left, top + SEG_HEIGHT - CANCEL_HEIGHT, SEG_WIDTH, CANCEL_HEIGHT, color_white);
     }
 
     if (scheme.show_crossups && info.mods & MT_CrossUp) {
-        tool.drawRect(left + SEG_WIDTH - BORDER_THICKNESS, top - BORDER_THICKNESS, 2 * BORDER_THICKNESS, SEG_HEIGHT + 2 * BORDER_THICKNESS, color_red);
+      tool.drawRect(left + SEG_WIDTH - BORDER_THICKNESS, top - BORDER_THICKNESS, 2 * BORDER_THICKNESS, SEG_HEIGHT + 2 * BORDER_THICKNESS, color_red);
     }
 
     if (info.trunc > 0) {
-      auto text = std::to_wstring(info.trunc);
+      auto text     = std::to_wstring(info.trunc);
       int text_left = left - (text.size() - 1) * 17 + 2;
       tool.drawOutlinedText(text_left, top, Unreal::FString(text.c_str()), BAR_TEXT_SIZE);
     }
@@ -515,7 +514,7 @@ void FrameBar::Data::addFrame() {
   }
 
   // crate updated states
-  auto scheme = ModMenu::instance().getScheme();
+  auto scheme                              = ModMenu::instance().getScheme();
   std::pair<PlayerState, PlayerState> next = {
       PlayerState(p_one, p_two, data.first.current_state, combo_active, scheme.show_crossups),
       PlayerState(p_two, p_one, data.second.current_state, combo_active, scheme.show_crossups)};
@@ -570,7 +569,7 @@ void FrameBar::Data::addFrame() {
   // update advantage
   if (!tracking_advantage) {
     if (data.first.current_state.isStunned() || data.second.current_state.isStunned()) {
-      advantage = 0;
+      advantage          = 0;
       tracking_advantage = true;
     }
   } else {
@@ -620,8 +619,8 @@ void FrameBar::Data::addFrame() {
   combo_active = true;
 }
 void FrameBar::Data::reset() {
-  combo_active = false;
-  data.first.current_state = PlayerState();
+  combo_active              = false;
+  data.first.current_state  = PlayerState();
   data.second.current_state = PlayerState();
   ptracker.reset();
   resetFrames();
@@ -629,9 +628,9 @@ void FrameBar::Data::reset() {
 void FrameBar::Data::draw() {
   tool.update();
 
-  auto& menu = ModMenu::instance();
+  auto &menu   = ModMenu::instance();
   auto options = menu.getScheme();
-  bool fade = menu.fadeEnabled();
+  bool fade    = menu.fadeEnabled();
 
   auto player_one_info = makeStatsText(data.first.displayed_stats, advantage);
   auto player_two_info = makeStatsText(data.second.displayed_stats, -advantage);
@@ -644,7 +643,7 @@ void FrameBar::Data::draw() {
 
   for (int idx = 0; idx < FRAME_SEGMENTS; ++idx) {
     int left = BAR_LEFT + (SEG_TOTAL * idx) + SEG_SPACING;
-    drawFrame(options,  data.first.segments[idx], SEGS_ONE_TOP, left);
+    drawFrame(options, data.first.segments[idx], SEGS_ONE_TOP, left);
     drawFrame(options, data.second.segments[idx], SEGS_TWO_TOP, left);
   }
 }

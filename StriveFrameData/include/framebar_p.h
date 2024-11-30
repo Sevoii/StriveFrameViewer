@@ -23,16 +23,16 @@ enum PlayerStateType {
 };
 
 enum ModifierType {
-  MT_None = 0x0,
+  MT_None        = 0x0,
   MT_Cancellable = 0x1,
-  MT_Projectile = 0x2,
-  MT_SegmentEnd = 0x4,
-  MT_CrossUp = 0x8
+  MT_Projectile  = 0x2,
+  MT_SegmentEnd  = 0x4,
+  MT_CrossUp     = 0x8
 };
-inline ModifierType operator|(ModifierType a, ModifierType b) { return (ModifierType)((int)a | (int)b);}
-inline ModifierType operator&(ModifierType a, ModifierType b) { return (ModifierType)((int)a & (int)b);}
-inline ModifierType& operator|=(ModifierType& a, ModifierType b) { return (a = a | b);}
-inline ModifierType& operator&=(ModifierType& a, ModifierType b) { return (a = a & b);}
+inline ModifierType operator|(ModifierType a, ModifierType b) { return (ModifierType)((int)a | (int)b); }
+inline ModifierType operator&(ModifierType a, ModifierType b) { return (ModifierType)((int)a & (int)b); }
+inline ModifierType &operator|=(ModifierType &a, ModifierType b) { return (a = a | b); }
+inline ModifierType &operator&=(ModifierType &a, ModifierType b) { return (a = a & b); }
 
 struct ProjectileTracker {
   struct ProjectileInfo {
@@ -44,15 +44,15 @@ struct ProjectileTracker {
 
     ProjectileInfo(asw_entity *source) {
       direct_parent = source->parent_obj;
-      root_parent = direct_parent;
-      alive = true;
-      old = 0;
+      root_parent   = direct_parent;
+      alive         = true;
+      old           = 0;
     }
     ProjectileInfo(asw_entity *source, const std::pair<asw_entity *, ProjectileInfo> &parent_info) {
       direct_parent = parent_info.first;
-      root_parent = parent_info.second.root_parent;
-      alive = true;
-      old = parent_info.second.old;
+      root_parent   = parent_info.second.root_parent;
+      alive         = true;
+      old           = parent_info.second.old;
     }
   };
 
@@ -68,13 +68,13 @@ struct PlayerState {
   bool any_prjt = false;
 
 public:
-  int time = -1;
+  int time             = -1;
   PlayerStateType type = PST_Idle;
-  int state_time = 0;
-  int trunc_time = 0;
-  bool active_stall = true;
-  bool can_cancel = false;
-  bool show_crossup = false;
+  int state_time       = 0;
+  int trunc_time       = 0;
+  bool active_stall    = true;
+  bool can_cancel      = false;
+  bool show_crossup    = false;
 
   // -2 means our x < other x
   // -1 means our x = other x but we just came from -2
@@ -91,9 +91,9 @@ public:
 
 struct FrameInfo {
   PlayerStateType state = PST_None;
-  ModifierType mods = MT_None;
-  double decay = 1.0;
-  int trunc = 0;
+  ModifierType mods     = MT_None;
+  double decay          = 1.0;
+  int trunc             = 0;
 };
 
 struct MoveStats {
@@ -120,10 +120,10 @@ struct PlayerData {
 
 struct FrameBar::Data {
   DrawContext tool;
-  bool combo_active = false;
+  bool combo_active       = false;
   int current_segment_idx = 0;
   bool tracking_advantage = false;
-  int advantage = 0;
+  int advantage           = 0;
   std::pair<PlayerData, PlayerData> data;
 
   /*template <class RetT, std::enable_if<!std::is_void_v<RetT>>, class... ArgT>
@@ -144,7 +144,7 @@ struct FrameBar::Data {
     func(&data.second, args...);
   }*/
 
-  void drawFrame(const CurrentOptions& scheme,  const FrameInfo &info, int top, int left);
+  void drawFrame(const CurrentOptions &scheme, const FrameInfo &info, int top, int left);
   void resetFrames();
 
   Data();

@@ -16,10 +16,10 @@ static void clip_line_y(
   const auto delta = line_b - line_a;
 
   if (abs(delta.x) > FLT_EPSILON) {
-    const auto slope = delta.y / delta.x;
+    const auto slope     = delta.y / delta.x;
     const auto intercept = line_a.y - slope * line_a.x;
-    *min_y = slope * min_x + intercept;
-    *max_y = slope * max_x + intercept;
+    *min_y               = slope * min_x + intercept;
+    *max_y               = slope * max_x + intercept;
   } else {
     *min_y = line_a.y;
     *max_y = line_b.y;
@@ -70,8 +70,8 @@ bool line_box_intersection(
       line_a.y > line_b.y ? min_y : max_y);
 
   const auto length = (line_b - line_a).Size();
-  *entry_fraction = (entry - line_a).Size() / length;
-  *exit_fraction = (exit - line_a).Size() / length;
+  *entry_fraction   = (entry - line_a).Size() / length;
+  *exit_fraction    = (exit - line_a).Size() / length;
 
   return true;
 }
@@ -272,9 +272,9 @@ void draw_hitbox(const DrawTool &tool, const asw_entity &entity, const DrawnHitb
         fill[3].x, fill[3].y);
 
     // fill_rect(canvas, fill, color);
-    auto left = fill[0].x;
-    auto top = fill[0].y;
-    auto width = fill[2].x - left;
+    auto left   = fill[0].x;
+    auto top    = fill[0].y;
+    auto width  = fill[2].x - left;
     auto height = fill[2].y - top;
 
     TOO_MUCH_DEBUG(
@@ -287,7 +287,7 @@ void draw_hitbox(const DrawTool &tool, const asw_entity &entity, const DrawnHitb
 
   for (const auto &line : box.lines) {
     auto start = line[0];
-    auto end = line[1];
+    auto end   = line[1];
     transform_hitbox_point(tool, entity, start, is_throw);
     transform_hitbox_point(tool, entity, end, is_throw);
     // canvas->K2_DrawLine(start, end, 2.F, color);
@@ -304,7 +304,7 @@ hitbox calc_afro_box(const asw_player &entity, int exIndex) {
   afro.h = static_cast<float>(entity.afroH);
   afro.w = static_cast<float>(entity.afroW);
 
-//  Output::send<LogLevel::Verbose>(STR("Extend Boxes: {} x {} y\n"), extend.x , extend.y);
+  //  Output::send<LogLevel::Verbose>(STR("Extend Boxes: {} x {} y\n"), extend.x , extend.y);
 
   afro.x = extend.x - static_cast<float>(entity.afroW) / 2.f;
   afro.y = extend.y - static_cast<float>(entity.afroH) / 2.f;
@@ -317,23 +317,23 @@ hitbox calc_throw_box(const asw_player &entity) {
   hitbox box;
   box.type = hitbox::box_type::grab;
 
-  const auto pushbox_front = entity.pushbox_width() / 2 + entity.pushbox_front_offset;
-  const int AIR_PUSHBOX_WIDTH_HALF = 50000;
+  const auto pushbox_front          = entity.pushbox_width() / 2 + entity.pushbox_front_offset;
+  const int AIR_PUSHBOX_WIDTH_HALF  = 50000;
   const int AIR_PUSHBOX_HEIGHT_HALF = 75000;
 
   // Ground throws have `activation range y xxx` as -1 for both
-  if (entity.activation_range_y_min == -1 && entity.activation_range_y_max == -1) {  // Ground throw calcs
+  if (entity.activation_range_y_min == -1 && entity.activation_range_y_max == -1) { // Ground throw calcs
     box.x = 0.f;
     box.w = (float)(pushbox_front + entity.throw_range);
     box.y = 0.f;
 
     // No throw height, use pushbox height for display
     box.h = (float)entity.pushbox_height();
-  } else {  // Air calcs
+  } else { // Air calcs
     // Basically only accounting for the x_min < 0 < x_max case; you can probably also account for x_min < x_max < 0 or 0 < x_min < x_max but I'm lazy
     if (entity.activation_range_x_min < -1) {
-      box.x = (float) std::max(entity.activation_range_x_min, -entity.throw_range - 2 * AIR_PUSHBOX_WIDTH_HALF) + AIR_PUSHBOX_WIDTH_HALF;
-      box.w = (float) -box.x;
+      box.x = (float)std::max(entity.activation_range_x_min, -entity.throw_range - 2 * AIR_PUSHBOX_WIDTH_HALF) + AIR_PUSHBOX_WIDTH_HALF;
+      box.w = (float)-box.x;
     } else {
       // box.w already preset
       box.x = -(float)(pushbox_front + entity.throw_range);
@@ -341,13 +341,13 @@ hitbox calc_throw_box(const asw_player &entity) {
     }
 
     if (entity.activation_range_x_max > -1) {
-      box.w += (float) std::min(entity.activation_range_x_max, entity.throw_range + 2 * AIR_PUSHBOX_WIDTH_HALF) - AIR_PUSHBOX_WIDTH_HALF;
+      box.w += (float)std::min(entity.activation_range_x_max, entity.throw_range + 2 * AIR_PUSHBOX_WIDTH_HALF) - AIR_PUSHBOX_WIDTH_HALF;
     } else {
-      box.w += (float) (pushbox_front + entity.throw_range);
+      box.w += (float)(pushbox_front + entity.throw_range);
     }
 
-    box.y = (float) (entity.pushboxYUpperAir - entity.pushboxYLowerAir) / 2.0f + (float) (entity.activation_range_y_min + AIR_PUSHBOX_HEIGHT_HALF);
-    box.h = (float) (entity.activation_range_y_max - entity.activation_range_y_min) - AIR_PUSHBOX_HEIGHT_HALF * 2;
+    box.y = (float)(entity.pushboxYUpperAir - entity.pushboxYLowerAir) / 2.0f + (float)(entity.activation_range_y_min + AIR_PUSHBOX_HEIGHT_HALF);
+    box.h = (float)(entity.activation_range_y_max - entity.activation_range_y_min) - AIR_PUSHBOX_HEIGHT_HALF * 2;
   }
 
   return box;
@@ -365,15 +365,14 @@ void draw_hitboxes(const DrawTool &tool, const asw_entity &entity, bool active) 
     if (box.type == hitbox::box_type::hit && !active) {
       continue;
     } else if (box.type == hitbox::box_type::hurt && entity.is_strike_invuln()) {
-        continue;
+      continue;
     }
 
     hitboxes.push_back(DrawnHitbox(box));
   }
 
-  
-  if(entity.is_player){
-    asw_player& player = *(asw_player*)&entity;
+  if (entity.is_player) {
+    asw_player &player = *(asw_player *)&entity;
 
     // hacky afro hurtbox
     // Jank way of finding the last hitbox (since entity.hitboxes isn't actually an array i don't think???)
@@ -389,7 +388,6 @@ void draw_hitboxes(const DrawTool &tool, const asw_entity &entity, bool active) 
           break;
         }
       }
-
     }
 
     // Add throw hitbox if in use
@@ -397,7 +395,6 @@ void draw_hitboxes(const DrawTool &tool, const asw_entity &entity, bool active) 
       hitboxes.push_back(calc_throw_box(player));
     }
   }
-  
 
   for (auto i = 0; i < hitboxes.size(); i++) {
     // Clip outlines
@@ -421,9 +418,9 @@ void draw_rect_no_outline(
     const DrawTool &tool,
     const std::array<FVector2D, 4> &corners,
     const FLinearColor &color) {
-  auto left = corners[0].x;
-  auto top = corners[0].y;
-  auto width = corners[2].x - left;
+  auto left   = corners[0].x;
+  auto top    = corners[0].y;
+  auto width  = corners[2].x - left;
   auto height = corners[2].y - top;
 
   tool.drawRect(left, top, width, height, color);
@@ -477,8 +474,8 @@ void draw_pushbox(const DrawTool &tool, const asw_entity &entity) {
   // Show outlined pushbox when pushbox doesn't have intangibility
   if (entity.is_pushbox_active() || !entity.is_throw_invuln())
     draw_rect(tool, corners, color);
-//  else
-//    draw_rect_no_outline(tool, corners, color);
+  //  else
+  //    draw_rect_no_outline(tool, corners, color);
 }
 
 void drawAllBoxes() {
@@ -497,7 +494,7 @@ void drawAllBoxes() {
 
     const auto *attached = entity.attached;
     while (attached != nullptr) {
-//      Output::send<LogLevel::Verbose>(STR("Attached Entity\n"));
+      //      Output::send<LogLevel::Verbose>(STR("Attached Entity\n"));
 
       draw_hitboxes(tool, *attached, active);
       attached = attached->attached;

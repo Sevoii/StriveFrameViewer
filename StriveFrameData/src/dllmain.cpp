@@ -28,11 +28,11 @@ using namespace std::chrono_literals;
 class UREDGameCommon : public Unreal::UObject {};
 
 // Functions
-using funcAHUDPostRender_t = void (*)(void *);
+using funcAHUDPostRender_t   = void (*)(void *);
 using funcACamUpdateCamera_t = void (*)(void *, float);
-using funcMatchStart_t = void (*)(AREDGameState_Battle *);
-using funcGetGameMode_t = int (*)(UREDGameCommon *);
-using funcUpdateBattle_t = void (*)(AREDGameState_Battle *, float);
+using funcMatchStart_t       = void (*)(AREDGameState_Battle *);
+using funcGetGameMode_t      = int (*)(UREDGameCommon *);
+using funcUpdateBattle_t     = void (*)(AREDGameState_Battle *, float);
 
 // Hooks
 void hook_AHUDPostRender(void *);
@@ -42,34 +42,34 @@ void hook_UpdateBattle(AREDGameState_Battle *, float);
 
 // Enums
 enum GAME_MODE : int32_t {
-  GAME_MODE_DEBUG_BATTLE = 0x0,
-  GAME_MODE_ADVERTISE = 0x1,
-  GAME_MODE_MAINTENANCEVS = 0x2,
-  GAME_MODE_ARCADE = 0x3,
-  GAME_MODE_MOM = 0x4,
-  GAME_MODE_SPARRING = 0x5,
-  GAME_MODE_VERSUS = 0x6,
-  GAME_MODE_VERSUS_PREINSTALL = 0x7,
-  GAME_MODE_TRAINING = 0x8,
-  GAME_MODE_TOURNAMENT = 0x9,
-  GAME_MODE_RANNYU_VERSUS = 0xA,
-  GAME_MODE_EVENT = 0xB,
-  GAME_MODE_SURVIVAL = 0xC,
-  GAME_MODE_STORY = 0xD,
-  GAME_MODE_MAINMENU = 0xE,
-  GAME_MODE_TUTORIAL = 0xF,
-  GAME_MODE_LOBBYTUTORIAL = 0x10,
-  GAME_MODE_CHALLENGE = 0x11,
-  GAME_MODE_KENTEI = 0x12,
-  GAME_MODE_MISSION = 0x13,
-  GAME_MODE_GALLERY = 0x14,
-  GAME_MODE_LIBRARY = 0x15,
-  GAME_MODE_NETWORK = 0x16,
-  GAME_MODE_REPLAY = 0x17,
-  GAME_MODE_LOBBYSUB = 0x18,
+  GAME_MODE_DEBUG_BATTLE          = 0x0,
+  GAME_MODE_ADVERTISE             = 0x1,
+  GAME_MODE_MAINTENANCEVS         = 0x2,
+  GAME_MODE_ARCADE                = 0x3,
+  GAME_MODE_MOM                   = 0x4,
+  GAME_MODE_SPARRING              = 0x5,
+  GAME_MODE_VERSUS                = 0x6,
+  GAME_MODE_VERSUS_PREINSTALL     = 0x7,
+  GAME_MODE_TRAINING              = 0x8,
+  GAME_MODE_TOURNAMENT            = 0x9,
+  GAME_MODE_RANNYU_VERSUS         = 0xA,
+  GAME_MODE_EVENT                 = 0xB,
+  GAME_MODE_SURVIVAL              = 0xC,
+  GAME_MODE_STORY                 = 0xD,
+  GAME_MODE_MAINMENU              = 0xE,
+  GAME_MODE_TUTORIAL              = 0xF,
+  GAME_MODE_LOBBYTUTORIAL         = 0x10,
+  GAME_MODE_CHALLENGE             = 0x11,
+  GAME_MODE_KENTEI                = 0x12,
+  GAME_MODE_MISSION               = 0x13,
+  GAME_MODE_GALLERY               = 0x14,
+  GAME_MODE_LIBRARY               = 0x15,
+  GAME_MODE_NETWORK               = 0x16,
+  GAME_MODE_REPLAY                = 0x17,
+  GAME_MODE_LOBBYSUB              = 0x18,
   GAME_MODE_MAINMENU_QUICK_BATTLE = 0x19,
-  GAME_MODE_UNDECIDED = 0x1A,
-  GAME_MODE_INVALID = 0x1B,
+  GAME_MODE_UNDECIDED             = 0x1A,
+  GAME_MODE_INVALID               = 0x1B,
 };
 
 /* Utilities */
@@ -78,7 +78,7 @@ const void *vtable_hook(const void **vtable, const int index, const void *hook) 
   DWORD old_protect;
   VirtualProtect(&vtable[index], sizeof(void *), PAGE_READWRITE, &old_protect);
   const auto *orig = vtable[index];
-  vtable[index] = hook;
+  vtable[index]    = hook;
   VirtualProtect(&vtable[index], sizeof(void *), old_protect, &old_protect);
   return orig;
 }
@@ -97,9 +97,9 @@ UE4SSProgram *Program;
 
 // Trackers
 class StateMgr {
-  UREDGameCommon *GameCommon = nullptr;
-  int last_mode = GAME_MODE_DEBUG_BATTLE;
-  bool in_allowed_mode = false;
+  UREDGameCommon *GameCommon     = nullptr;
+  int last_mode                  = GAME_MODE_DEBUG_BATTLE;
+  bool in_allowed_mode           = false;
   std::vector<int> allowed_modes = {GAME_MODE_TRAINING, GAME_MODE_REPLAY, GAME_MODE_MISSION, GAME_MODE_UNDECIDED};
 
 public:
@@ -110,33 +110,33 @@ public:
     if (!GameCommon) return false;
     if (int current_mode = orig_GetGameMode(GameCommon); current_mode != last_mode) {
       //       RC::Output::send<LogLevel::Warning>(STR("Mode Change: {}\n"), current_mode);
-      last_mode = current_mode;
+      last_mode       = current_mode;
       in_allowed_mode = (std::find(allowed_modes.begin(), allowed_modes.end(), current_mode) != allowed_modes.end());
     }
     return in_allowed_mode;
   }
   void checkRound() {
-    resetting = false;
+    resetting    = false;
     auto *events = asw_events::get();
-    auto count = events->event_count;
+    auto count   = events->event_count;
     if (count > 10) count = 10;
     for (unsigned int idx = 0; idx < count; ++idx) {
       auto e_type = events->events[idx].type;
       // if(e_type < 41) RC::Output::send<LogLevel::Warning>(STR("Event {}: {}\n"), idx, (int)e_type);
       if (e_type == BOM_EVENT_RESET || e_type == BOM_EVENT_DECISION) {
-        resetting = true;
+        resetting   = true;
         roundActive = false;
       }
       if (e_type == BOM_EVENT_BATTLE_START) {
-        resetting = true;
+        resetting   = true;
         roundActive = true;
       };
     }
   }
 
-  bool resetting = false;
+  bool resetting    = false;
   bool matchStarted = true;
-  bool roundActive = false;
+  bool roundActive  = false;
 
 } game_state;
 
@@ -145,14 +145,14 @@ public:
   static const int BUTTON_COUNT = 9;
 
   int TOGGLE_FRAMEBAR_BUTTON = VK_F1;
-  int TOGGLE_HITBOX_BUTTON = VK_F2;
-  int PAUSE_BUTTON = VK_F3;
-  int ADVANCE_BUTTON = VK_F4;
-  int TOGGLE_MENU_BUTTON = VK_F5;
+  int TOGGLE_HITBOX_BUTTON   = VK_F2;
+  int PAUSE_BUTTON           = VK_F3;
+  int ADVANCE_BUTTON         = VK_F4;
+  int TOGGLE_MENU_BUTTON     = VK_F5;
 
-  int MENU_UP_BUTTON = VK_UP;
-  int MENU_DOWN_BUTTON = VK_DOWN;
-  int MENU_LEFT_BUTTON = VK_LEFT;
+  int MENU_UP_BUTTON    = VK_UP;
+  int MENU_DOWN_BUTTON  = VK_DOWN;
+  int MENU_LEFT_BUTTON  = VK_LEFT;
   int MENU_RIGHT_BUTTON = VK_RIGHT;
 
   int buttons[BUTTON_COUNT] = {TOGGLE_FRAMEBAR_BUTTON, TOGGLE_HITBOX_BUTTON, PAUSE_BUTTON, ADVANCE_BUTTON, TOGGLE_MENU_BUTTON, MENU_UP_BUTTON, MENU_DOWN_BUTTON, MENU_LEFT_BUTTON, MENU_RIGHT_BUTTON};
@@ -215,7 +215,7 @@ private:
 } keybindings;
 
 class PauseManager {
-  bool isPaused = false;
+  bool isPaused      = false;
   bool shouldAdvance = false;
 
 public:
@@ -256,15 +256,15 @@ public:
   }
 
   void reset() {
-    isPaused = false;
+    isPaused      = false;
     shouldAdvance = false;
   }
 } pause_manager;
 
 class UeTracker {
   Unreal::UObject *worldsets_actor = nullptr;
-  Unreal::FProperty *paused_prop = nullptr;
-  bool renderingHooked = false;
+  Unreal::FProperty *paused_prop   = nullptr;
+  bool renderingHooked             = false;
 
   void hookFuncs() {
     if (renderingHooked) return;
@@ -272,13 +272,13 @@ class UeTracker {
 
     /* HUD Rendering vtable hook*/
     const auto **AHUD_vtable = (const void **)get_rip_relative(sigscan::get().scan("\x48\x8D\x05\x00\x00\x00\x00\xC6\x83\x18\x03", "xxx????xxxx") + 3);
-    orig_AHUDPostRender = (funcAHUDPostRender_t)vtable_hook(AHUD_vtable, 214, hook_AHUDPostRender);
+    orig_AHUDPostRender      = (funcAHUDPostRender_t)vtable_hook(AHUD_vtable, 214, hook_AHUDPostRender);
 
     const auto **ACamera_vtable = (const void **)get_rip_relative(sigscan::get().scan("\x48\x8D\x05\x00\x00\x00\x00\x48\x8d\x8f\x20\x28\x00\x00", "xxx????xxxxxxx") + 3);
-    orig_ACamUpdateCamera = (funcACamUpdateCamera_t)vtable_hook(ACamera_vtable, 208, hook_ACamUpdateCamera);
+    orig_ACamUpdateCamera       = (funcACamUpdateCamera_t)vtable_hook(ACamera_vtable, 208, hook_ACamUpdateCamera);
   }
   void findProp() {
-    static auto input_class_name = Unreal::FName(STR("REDPlayerController_Battle"), Unreal::FNAME_Add);
+    static auto input_class_name       = Unreal::FName(STR("REDPlayerController_Battle"), Unreal::FNAME_Add);
     static auto getworldsets_func_name = Unreal::FName(STR("K2_GetWorldSettings"), Unreal::FNAME_Add);
 
     auto *input_actor = static_cast<Unreal::AActor *>(UObjectGlobals::FindFirstOf(input_class_name));
@@ -299,7 +299,7 @@ class UeTracker {
 public:
   void reset() {
     worldsets_actor = nullptr;
-    paused_prop = nullptr;
+    paused_prop     = nullptr;
   }
   void setup() {
     reset();
@@ -320,7 +320,7 @@ FrameBar the_bar;
 
 void hook_MatchStart(AREDGameState_Battle *GameState) {
   game_state.matchStarted = true;
-  game_state.roundActive = false;
+  game_state.roundActive  = false;
   pause_manager.reset();
   tracker.reset();
 
@@ -401,12 +401,12 @@ public:
 
   StriveFrameData()
   : CppUserModBase() {
-    ModName = STR("Strive Frame Data");
-    ModVersion = STR("1.04");
-    ModDescription = STR("A tool to display frame advantage.");
-    ModAuthors = STR("pbozai, Sevoi");
+    ModName             = STR("Strive Frame Data");
+    ModVersion          = STR("1.04");
+    ModDescription      = STR("A tool to display frame advantage.");
+    ModAuthors          = STR("pbozai, Sevoi");
     UpdateBattle_Detour = nullptr;
-    MatchStart_Detour = nullptr;
+    MatchStart_Detour   = nullptr;
     // Do not change this unless you want to target a UE4SS version
     // other than the one you're currently building with somehow.
     // ModIntendedSDKVersion = STR("2.6");
@@ -422,16 +422,16 @@ public:
     Program = &UE4SSProgram::get_program();
 
     const uint64_t UpdateBattle_Addr = sigscan::get().scan("\x40\x53\x57\x41\x54\x41\x55\x48\x81\xEC\x88\x00\x00\x00", "xxxxxxxxxxxxxx");
-    UpdateBattle_Detour = new PLH::x64Detour(UpdateBattle_Addr, reinterpret_cast<uint64_t>(&hook_UpdateBattle), reinterpret_cast<uint64_t *>(&orig_UpdateBattle));
+    UpdateBattle_Detour              = new PLH::x64Detour(UpdateBattle_Addr, reinterpret_cast<uint64_t>(&hook_UpdateBattle), reinterpret_cast<uint64_t *>(&orig_UpdateBattle));
     UpdateBattle_Detour->hook();
 
     // https://github.com/TheLettuceClub/StriveSAMMI/blob/7292cc225bd4de2b389e92b227c1b2793609c4e1/GGSTSammi/src/dllmain.cpp#L435
     const uint64_t MatchStart_Addr = sigscan::get().scan("\x48\x89\x5c\x24\x10\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8d\x6c\x24\xf0\x48\x81\xec\x10\x01\x00\x00\x0f\x29\xb4\x24", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-    MatchStart_Detour = new PLH::x64Detour(MatchStart_Addr, reinterpret_cast<uint64_t>(&hook_MatchStart), reinterpret_cast<uint64_t *>(&orig_MatchStart));
+    MatchStart_Detour              = new PLH::x64Detour(MatchStart_Addr, reinterpret_cast<uint64_t>(&hook_MatchStart), reinterpret_cast<uint64_t *>(&orig_MatchStart));
     MatchStart_Detour->hook();
 
     const uintptr_t GetGameMode_Addr = sigscan::get().scan("\x0F\xB6\x81\xF0\x02\x00\x00\xC3", "xxxxxxxx");
-    orig_GetGameMode = reinterpret_cast<funcGetGameMode_t>(GetGameMode_Addr);
+    orig_GetGameMode                 = reinterpret_cast<funcGetGameMode_t>(GetGameMode_Addr);
 
     ASWInitFunctions();
     //    bbscript::BBSInitializeFunctions();
