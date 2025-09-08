@@ -1,7 +1,3 @@
-# CURRENTLY NOT BEING MAINTAINED 
-
-Cause I don't have access to my main pc anymore rip
-
 # Strive Frame Viewer
 
 This is a fork of Procdox's Framebar viewer mod that allows you to see a SF6 style frame data display in training/replay mode (and only training/replay mode). There is no gamebanan link right now
