@@ -4,8 +4,8 @@ $Project_Dir = (get-item $PSScriptRoot).Parent.FullName
 $Package_Dir = "$Project_Dir\Packages\Standalone"
 $Build_Dir = "$Project_Dir\build"
 $Mod_DLL = "$Build_Dir\StriveFrameData\Game__Shipping__Win64\StriveFrameData.dll"
-$UE4SS_DLL = "$Build_Dir\Output\Game__Shipping__Win64\UE4SS\bin\UE4SS.dll"
-$Proxy_DLL = "$Build_Dir\Output\Game__Shipping__Win64\proxy\bin\dwmapi.dll"
+$UE4SS_DLL = "$Build_Dir\Game__Shipping__Win64\bin\UE4SS.dll"
+$Proxy_DLL = "$Build_Dir\Game__Shipping__Win64\bin\dwmapi.dll"
 
 if(-Not (Test-Path -Path "$Mod_DLL")) {
   Write-Host "Failed to find Mod DLL"

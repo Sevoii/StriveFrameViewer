@@ -1,5 +1,7 @@
 #include "framebar_p.h"
 
+#include <Windows.h>
+
 /* Debug Stuff */
 #if 0
 #define DEBUG_PRINT(...) RC::Output::send<LogLevel::Warning>(__VA_ARGS__)
