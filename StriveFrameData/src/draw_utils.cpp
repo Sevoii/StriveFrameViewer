@@ -17,81 +17,67 @@ DrawTool &DrawTool::instance() {
   return me;
 }
 
+// direct lookup by object path (hashed), instead of scanning every UFont in the object array.
+// engine content fonts are always loaded and rooted, so the pointer is cached for the whole session.
 Unreal::UObject *getFont() {
-  static auto ufont_class_name = Unreal::FName(STR("Font"), Unreal::FNAME_Add);
-  std::vector<RC::Unreal::UObject *> all_fonts;
-  UObjectGlobals::FindAllOf(ufont_class_name, all_fonts);
-  for (auto *font : all_fonts) {
-    if (font->GetName() == L"RobotoDistanceField") {
-      return font;
-    }
+  static Unreal::UObject *font = nullptr;
+  if (!font) {
+    font = UObjectGlobals::StaticFindObject<Unreal::UObject *>(nullptr, nullptr, STR("/Engine/EngineFonts/RobotoDistanceField.RobotoDistanceField"));
+    if (!font) Output::send<LogLevel::Error>(STR("StriveFrameViewer: RobotoDistanceField font not found\n"));
   }
-  return nullptr;
+  return font;
 }
 
-// useless now that we just update refs
-void DrawTool::initialize() {
-  valid = false;
+// UFunctions belong to the class (AHUD / APlayerController natives), not the instance, so they are the same for
+// every HUD the game creates and only need resolving once. the font is rooted engine content, also permanent.
+bool DrawTool::resolveFunctions(Unreal::UObject *hud, Unreal::UObject *player) {
+  if (!ref_drawrect) {
+    static auto hud_drawrect_func_name = Unreal::FName(STR("DrawRect"), Unreal::FNAME_Add);
+    static auto hud_drawtext_func_name = Unreal::FName(STR("DrawText"), Unreal::FNAME_Add);
+    static auto hud_drawline_func_name = Unreal::FName(STR("DrawLine"), Unreal::FNAME_Add);
+    static auto hud_project_func_name = Unreal::FName(STR("Project"), Unreal::FNAME_Add);
 
-  static auto hud_class_name = Unreal::FName(STR("REDHUD_Battle"), Unreal::FNAME_Add);
+    auto *drawrect = hud->GetFunctionByNameInChain(hud_drawrect_func_name);
+    auto *drawtext = hud->GetFunctionByNameInChain(hud_drawtext_func_name);
+    auto *drawline = hud->GetFunctionByNameInChain(hud_drawline_func_name);
+    auto *project = hud->GetFunctionByNameInChain(hud_project_func_name);
+    if (!drawrect || !drawtext || !drawline || !project) return false;
 
-  ref_hud = UObjectGlobals::FindFirstOf(hud_class_name);
-  if (!ref_hud)
-    return;
-
-  updateRefs();
+    ref_drawtext = drawtext;
+    ref_drawline = drawline;
+    ref_project = project;
+    ref_drawrect = drawrect; // set last: it doubles as the "hud functions resolved" flag
+  }
+  if (!ref_getsize) {
+    static auto player_getsize_func_name = Unreal::FName(STR("GetViewportSize"), Unreal::FNAME_Add);
+    ref_getsize = player->GetFunctionByNameInChain(player_getsize_func_name);
+    if (!ref_getsize) return false;
+  }
+  if (!ref_font) {
+    ref_font = getFont();
+    if (!ref_font) return false;
+  }
+  return true;
 }
 
-void DrawTool::updateRefs() {
-  if (!ref_hud) return;
-  valid = false;
-
-  static auto hud_drawrect_func_name = Unreal::FName(STR("DrawRect"), Unreal::FNAME_Add);
-  static auto hud_drawtext_func_name = Unreal::FName(STR("DrawText"), Unreal::FNAME_Add);
-  static auto hud_drawline_func_name = Unreal::FName(STR("DrawLine"), Unreal::FNAME_Add);
-  static auto hud_project_func_name = Unreal::FName(STR("Project"), Unreal::FNAME_Add);
-  static auto hud_getplayer_func_name = Unreal::FName(STR("GetOwningPlayerController"), Unreal::FNAME_Add);
-  static auto player_getsize_func_name = Unreal::FName(STR("GetViewportSize"), Unreal::FNAME_Add);
-
-  ref_drawrect = ref_hud->GetFunctionByNameInChain(hud_drawrect_func_name);
-  ref_drawtext = ref_hud->GetFunctionByNameInChain(hud_drawtext_func_name);
-  ref_drawline = ref_hud->GetFunctionByNameInChain(hud_drawline_func_name);
-  ref_project = ref_hud->GetFunctionByNameInChain(hud_project_func_name);
-  Unreal::UFunction *getplayer_func = ref_hud->GetFunctionByNameInChain(hud_getplayer_func_name);
-  if (!ref_drawrect || !ref_drawtext || !getplayer_func || !ref_project || !ref_drawline)
-    return;
-
-  ref_hud->ProcessEvent(getplayer_func, &ref_player);
-  if (!ref_player)
-    return;
-
-  ref_getsize = ref_player->GetFunctionByNameInChain(player_getsize_func_name);
-  if (!ref_getsize)
-    return;
-
-  ref_font = getFont();
-  if (!ref_font)
-    return;
-
-  valid = true;
-}
-
-
+// called from AHUD::PostRender with the HUD that is drawing right now. its canvas is only valid during this call,
+// so we always draw on exactly this HUD and never keep it across frames; a HUD recreated mid-match just works.
 bool DrawTool::update(void *actual_hud) {
-  if (actual_hud != ref_hud) {
-    valid = false;
+  valid = false;
+  ref_hud = static_cast<Unreal::UObject *>(actual_hud);
+  ref_player = nullptr;
+  if (!ref_hud) return false;
 
-    if (matchStarted) {
-      matchStarted = false;
-
-      ref_hud = (UObject*) actual_hud; //  just force it here
-      updateRefs();
-    }
+  if (!ref_getplayer) {
+    static auto hud_getplayer_func_name = Unreal::FName(STR("GetOwningPlayerController"), Unreal::FNAME_Add);
+    ref_getplayer = ref_hud->GetFunctionByNameInChain(hud_getplayer_func_name);
+    if (!ref_getplayer) return false;
   }
 
-  if (!valid) {
-    return false;
-  }
+  ref_hud->ProcessEvent(ref_getplayer, &ref_player);
+  if (!ref_player) return false;
+
+  if (!resolveFunctions(ref_hud, ref_player)) return false;
 
   DrawParams::Size size_data;
   ref_player->ProcessEvent(ref_getsize, &size_data);
@@ -107,6 +93,7 @@ bool DrawTool::update(void *actual_hud) {
     screen_height = screen_width / EXPECTED_DISP_RATIO;
   }
   units = screen_width * PROJECTED_RATIO;
+  valid = true;
   return true;
 }
 

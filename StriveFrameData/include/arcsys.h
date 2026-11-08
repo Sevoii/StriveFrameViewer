@@ -13,13 +13,61 @@ struct SimpleFVector {
 
 class AGameState : public RC::Unreal::AActor {};
 
+enum GAME_MODE : int32_t {
+  GAME_MODE_DEBUG_BATTLE = 0x0,
+  GAME_MODE_ADVERTISE = 0x1,
+  GAME_MODE_MAINTENANCEVS = 0x2,
+  GAME_MODE_ARCADE = 0x3,
+  GAME_MODE_MOM = 0x4,
+  GAME_MODE_SPARRING = 0x5,
+  GAME_MODE_VERSUS = 0x6,
+  GAME_MODE_VERSUS_PREINSTALL = 0x7,
+  GAME_MODE_TRAINING = 0x8,
+  GAME_MODE_TOURNAMENT = 0x9,
+  GAME_MODE_RANNYU_VERSUS = 0xA,
+  GAME_MODE_EVENT = 0xB,
+  GAME_MODE_SURVIVAL = 0xC,
+  GAME_MODE_STORY = 0xD,
+  GAME_MODE_MAINMENU = 0xE,
+  GAME_MODE_TUTORIAL = 0xF,
+  GAME_MODE_LOBBYTUTORIAL = 0x10,
+  GAME_MODE_CHALLENGE = 0x11,
+  GAME_MODE_KENTEI = 0x12,
+  GAME_MODE_MISSION = 0x13,
+  GAME_MODE_GALLERY = 0x14,
+  GAME_MODE_LIBRARY = 0x15,
+  GAME_MODE_NETWORK = 0x16,
+  GAME_MODE_REPLAY = 0x17,
+  GAME_MODE_LOBBYSUB = 0x18,
+  GAME_MODE_MAINMENU_QUICK_BATTLE = 0x19,
+  GAME_MODE_UNDECIDED = 0x1A,
+  GAME_MODE_INVALID = 0x1B,
+};
+
+// the game's UGameInstance
+class UREDGameCommon : public RC::Unreal::UObject {
+public:
+  // TEnumAsByte<GAME_MODE> m_GameMode; UREDGameCommon::GetGameMode() is just `movzx eax, byte [rcx+2F0h]; ret`
+  FIELD(0x2F0, uint8_t, GameMode);
+};
+
 class UWorld : public RC::Unreal::UObject {
 public:
   FIELD(0x130, AGameState*, GameState);
+  FIELD(0x188, UREDGameCommon*, OwningGameInstance);
+};
+
+class AREDHUD_Battle : public RC::Unreal::AActor {};
+
+class AREDPlayerController : public RC::Unreal::AActor {
+public:
+  FIELD(0x2B8, AREDHUD_Battle*, MyHUD); // APlayerController::MyHUD (CXXHeaderDump Engine.hpp)
 };
 
 class AREDGameState_Battle : public AGameState {
 public:
+  FIELD(0x378, AREDPlayerController*, PrimaryPC); // GetPC() / GetHUD() == PrimaryPC->MyHUD
+
   FIELD(0xC20, class asw_rollback*, Rollback);
   FIELD(0xC38, class asw_engine*, Engine);
   FIELD(0xC40, class asw_scene*, Scene);
@@ -672,3 +720,10 @@ public:
 };
 
 extern UWorld** GWorld;
+
+// current game mode, or GAME_MODE_INVALID before the world / game instance exist
+GAME_MODE getGameMode();
+
+// the current battle's HUD (AREDGameState_Battle::GetHUD), read fresh; nullptr outside a battle world.
+// compare against, don't cache: the game can recreate it.
+AREDHUD_Battle* getBattleHUD();

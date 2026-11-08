@@ -52,6 +52,13 @@ void ASWInitFunctions() {
   asw_entity_get_pushbox = reinterpret_cast<asw_entity_get_pushbox_t>(sigscan::get().scan("\x99\x48\x8B\xCB\x2B\xC2\xD1\xF8\x44", "xxxxxxxxx") - 0x5B);
 }
 
+GAME_MODE getGameMode() {
+  if (!GWorld || !*GWorld) return GAME_MODE_INVALID;
+  auto* GameCommon = (*GWorld)->OwningGameInstance;
+  if (!GameCommon) return GAME_MODE_INVALID;
+  return static_cast<GAME_MODE>(GameCommon->GameMode);
+}
+
 AREDGameState_Battle* getGameState() {
   if (Class == nullptr) {
     Class = RC::UObjectGlobals::StaticFindObject<RC::UClass*>(nullptr, nullptr, STR("/Script/RED.REDGameState_Battle"));
@@ -61,6 +68,13 @@ AREDGameState_Battle* getGameState() {
 
   if (GameState == nullptr || !GameState->IsA(Class)) return nullptr;
   return GameState;
+}
+
+AREDHUD_Battle* getBattleHUD() {
+  auto* GameState = getGameState();
+  if (!GameState) return nullptr;
+  auto* PC = GameState->PrimaryPC;
+  return PC ? PC->MyHUD : nullptr;
 }
 
 asw_rollback* asw_rollback::get()

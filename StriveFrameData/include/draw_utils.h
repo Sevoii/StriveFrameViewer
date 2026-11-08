@@ -129,11 +129,14 @@ namespace DrawParams {
 
 class DrawTool {
   bool valid = false;
-  bool matchStarted = false;
 
+  // per-frame: the HUD currently in PostRender and its owning player controller (never reused across frames)
   Unreal::UObject *ref_hud = nullptr;
   Unreal::UObject *ref_player = nullptr;
+
+  // resolved once, class-level / permanent objects
   Unreal::UObject *ref_font = nullptr;
+  Unreal::UFunction *ref_getplayer = nullptr;
   Unreal::UFunction *ref_getsize = nullptr;
   Unreal::UFunction *ref_project = nullptr;
   Unreal::UFunction *ref_drawrect = nullptr;
@@ -148,22 +151,17 @@ class DrawTool {
   DrawTool(DrawTool &) = delete;
   DrawTool(const DrawTool &&) = delete;
 
+  bool resolveFunctions(Unreal::UObject *hud, Unreal::UObject *player);
+
 public:
   ~DrawTool();
 
   static DrawTool &instance();
 
-  void matchStart() {
-    matchStarted = true;
-  }
-
-  void initialize();
   bool update(void *actual_hud);
   double getWidth() const { return screen_width; }
   double getHeight() const { return screen_height; }
   double getUnits() const { return units; }
-
-  void updateRefs();
 
   SimpleFVector project(const SimpleFVector &world_coords) const {
     DrawParams::Project params{

@@ -24,19 +24,12 @@ using namespace std::chrono_literals;
 
 /* Definitions */
 
-// Classes
-class UREDGameCommon : public Unreal::UObject {};
-
 // Functions
 using funcAHUDPostRender_t = void (*)(void *);
 using funcACamUpdateCamera_t = void (*)(void *, float);
 using funcMatchStart_t = void (*)(AREDGameState_Battle *);
-using funcGetGameMode_t = int (*)(UREDGameCommon *);
 using funcUpdateBattle_t = void (*)(AREDGameState_Battle *, float);
 using funcUpdateBattleSub_t = void (*)(AREDGameState_Battle *, float, bool);
-
-// Other func
-using funcGetWorldSettings = Unreal::UObject* (*)(void *);
 
 // Hooks
 void hook_AHUDPostRender(void *);
@@ -44,38 +37,6 @@ void hook_ACamUpdateCamera(void *, float);
 void hook_MatchStart(AREDGameState_Battle *);
 void hook_UpdateBattle(AREDGameState_Battle *, float);
 void hook_UpdateBattleSub(AREDGameState_Battle *, float, bool);
-
-// Enums
-enum GAME_MODE : int32_t {
-  GAME_MODE_DEBUG_BATTLE = 0x0,
-  GAME_MODE_ADVERTISE = 0x1,
-  GAME_MODE_MAINTENANCEVS = 0x2,
-  GAME_MODE_ARCADE = 0x3,
-  GAME_MODE_MOM = 0x4,
-  GAME_MODE_SPARRING = 0x5,
-  GAME_MODE_VERSUS = 0x6,
-  GAME_MODE_VERSUS_PREINSTALL = 0x7,
-  GAME_MODE_TRAINING = 0x8,
-  GAME_MODE_TOURNAMENT = 0x9,
-  GAME_MODE_RANNYU_VERSUS = 0xA,
-  GAME_MODE_EVENT = 0xB,
-  GAME_MODE_SURVIVAL = 0xC,
-  GAME_MODE_STORY = 0xD,
-  GAME_MODE_MAINMENU = 0xE,
-  GAME_MODE_TUTORIAL = 0xF,
-  GAME_MODE_LOBBYTUTORIAL = 0x10,
-  GAME_MODE_CHALLENGE = 0x11,
-  GAME_MODE_KENTEI = 0x12,
-  GAME_MODE_MISSION = 0x13,
-  GAME_MODE_GALLERY = 0x14,
-  GAME_MODE_LIBRARY = 0x15,
-  GAME_MODE_NETWORK = 0x16,
-  GAME_MODE_REPLAY = 0x17,
-  GAME_MODE_LOBBYSUB = 0x18,
-  GAME_MODE_MAINMENU_QUICK_BATTLE = 0x19,
-  GAME_MODE_UNDECIDED = 0x1A,
-  GAME_MODE_INVALID = 0x1B,
-};
 
 /* Utilities */
 
@@ -91,7 +52,6 @@ const void *vtable_hook(const void **vtable, const int index, const void *hook) 
 /* Variables */
 
 // Functions
-funcGetGameMode_t orig_GetGameMode;
 funcAHUDPostRender_t orig_AHUDPostRender;
 funcACamUpdateCamera_t orig_ACamUpdateCamera;
 funcMatchStart_t orig_MatchStart;
@@ -103,18 +63,13 @@ UE4SSProgram *Program;
 
 // Trackers
 class StateMgr {
-  UREDGameCommon *GameCommon = nullptr;
-  int last_mode = GAME_MODE_DEBUG_BATTLE;
+  GAME_MODE last_mode = GAME_MODE_INVALID;
   bool in_allowed_mode = false;
-  std::vector<int> allowed_modes = {GAME_MODE_TRAINING, GAME_MODE_REPLAY, GAME_MODE_MISSION, GAME_MODE_UNDECIDED};
+  std::vector<GAME_MODE> allowed_modes = {GAME_MODE_TRAINING, GAME_MODE_REPLAY, GAME_MODE_MISSION, GAME_MODE_UNDECIDED};
 
 public:
   bool checkMode() {
-    if (!GameCommon) {
-      GameCommon = reinterpret_cast<UREDGameCommon *>(UObjectGlobals::FindFirstOf(FName(STR("REDGameCommon"))));
-    }
-    if (!GameCommon) return false;
-    if (int current_mode = orig_GetGameMode(GameCommon); current_mode != last_mode) {
+    if (GAME_MODE current_mode = getGameMode(); current_mode != last_mode) {
       //       RC::Output::send<LogLevel::Warning>(STR("Mode Change: {}\n"), current_mode);
       last_mode = current_mode;
       in_allowed_mode = (std::find(allowed_modes.begin(), allowed_modes.end(), current_mode) != allowed_modes.end());
@@ -298,8 +253,6 @@ void hook_MatchStart(AREDGameState_Battle *GameState) {
   game_state.roundActive = false;
   pause_manager.reset();
 
-  DrawTool::instance().matchStart();
-
   orig_MatchStart(GameState);
 }
 void hook_AHUDPostRender(void *hud) {
@@ -308,7 +261,10 @@ void hook_AHUDPostRender(void *hud) {
     return;
   }
 
-  if (DrawTool::instance().update(hud)) {
+  // draw only on the battle's own HUD, and only once the battle has ticked since MatchStart (matchStarted is cleared
+  // by the first UpdateBattle). other HUDs and the loading screen before the battle runs are left alone.
+  const bool battle_hud = !game_state.matchStarted && hud == getBattleHUD();
+  if (battle_hud && DrawTool::instance().update(hud)) {
     auto &menu = ModMenu::instance();
     menu.draw();
     if (menu.hitboxEnabled()) drawAllBoxes();
@@ -360,7 +316,6 @@ void hook_UpdateBattle(AREDGameState_Battle *GameState, float DeltaTime) {
 
   if (game_state.matchStarted) {
     game_state.matchStarted = false;
-    // DrawTool::instance().initialize();
     tracker.setup();
   }
 }
@@ -419,9 +374,6 @@ public:
     const uint64_t MatchStart_Addr = sigscan::get().scan("\x48\x89\x5c\x24\x10\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8d\x6c\x24\xf0\x48\x81\xec\x10\x01\x00\x00\x0f\x29\xb4\x24", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     MatchStart_Detour = new PLH::x64Detour(MatchStart_Addr, reinterpret_cast<uint64_t>(&hook_MatchStart), reinterpret_cast<uint64_t *>(&orig_MatchStart));
     MatchStart_Detour->hook();
-
-    const uintptr_t GetGameMode_Addr = sigscan::get().scan("\x0F\xB6\x81\xF0\x02\x00\x00\xC3", "xxxxxxxx");
-    orig_GetGameMode = reinterpret_cast<funcGetGameMode_t>(GetGameMode_Addr);
 
     ASWInitFunctions();
     //    bbscript::BBSInitializeFunctions();
