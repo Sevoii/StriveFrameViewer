@@ -18,3 +18,8 @@ if(Test-Path -Path "$Package_Dir"){
 Write-Host "Creating Package"
 New-Item -ItemType Directory "$Package_Dir\ue4ss\StriveFrameViewer\dlls" | Out-Null
 Copy-Item "$Mod_DLL" "$Package_Dir\ue4ss\StriveFrameViewer\dlls\main.dll" | Out-Null
+
+Write-Host "Zipping Package"
+$Zip_Path = "$Project_Dir\Packages\StriveFrameViewer-Unverum.zip"
+Compress-Archive -Path "$Package_Dir\*" -DestinationPath "$Zip_Path" -Force
+Write-Host "Created $Zip_Path"
