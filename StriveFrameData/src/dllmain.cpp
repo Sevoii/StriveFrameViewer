@@ -33,6 +33,7 @@ using funcACamUpdateCamera_t = void (*)(void *, float);
 using funcMatchStart_t = void (*)(AREDGameState_Battle *);
 using funcGetGameMode_t = int (*)(UREDGameCommon *);
 using funcUpdateBattle_t = void (*)(AREDGameState_Battle *, float);
+using funcUpdateBattleSub_t = void (*)(AREDGameState_Battle *, float, bool);
 
 // Other func
 using funcGetWorldSettings = Unreal::UObject* (*)(void *);
@@ -42,6 +43,7 @@ void hook_AHUDPostRender(void *);
 void hook_ACamUpdateCamera(void *, float);
 void hook_MatchStart(AREDGameState_Battle *);
 void hook_UpdateBattle(AREDGameState_Battle *, float);
+void hook_UpdateBattleSub(AREDGameState_Battle *, float, bool);
 
 // Enums
 enum GAME_MODE : int32_t {
@@ -94,6 +96,7 @@ funcAHUDPostRender_t orig_AHUDPostRender;
 funcACamUpdateCamera_t orig_ACamUpdateCamera;
 funcMatchStart_t orig_MatchStart;
 funcUpdateBattle_t orig_UpdateBattle;
+funcUpdateBattleSub_t orig_UpdateBattleSub;
 
 // State Data
 UE4SSProgram *Program;
@@ -360,10 +363,13 @@ void hook_UpdateBattle(AREDGameState_Battle *GameState, float DeltaTime) {
     // DrawTool::instance().initialize();
     tracker.setup();
   }
+}
+void hook_UpdateBattleSub(AREDGameState_Battle *GameState, float DeltaTime, bool bSkip) {
+  orig_UpdateBattleSub(GameState, DeltaTime, bSkip);
 
-  // the bar samples only when the engine actually simulated a frame (GameFrame advanced),
+  // sample after every battle sub-update; the history only records when GameFrame advanced,
   // so engine pauses and skipped updates need no special handling here
-  if (game_state.roundActive) {
+  if (game_state.checkMode() && game_state.roundActive) {
     the_bar.addFrame();
   }
 }
@@ -372,6 +378,7 @@ void hook_UpdateBattle(AREDGameState_Battle *GameState, float DeltaTime) {
 class StriveFrameData : public CppUserModBase {
 public:
   PLH::x64Detour *UpdateBattle_Detour;
+  PLH::x64Detour *UpdateBattleSub_Detour;
   PLH::x64Detour *MatchStart_Detour;
 
   StriveFrameData()
@@ -381,6 +388,7 @@ public:
     ModDescription = STR("A tool to display frame advantage.");
     ModAuthors = STR("pbozai, Sevoi");
     UpdateBattle_Detour = nullptr;
+    UpdateBattleSub_Detour = nullptr;
     MatchStart_Detour = nullptr;
     // Do not change this unless you want to target a UE4SS version
     // other than the one you're currently building with somehow.
@@ -399,6 +407,13 @@ public:
     const uint64_t UpdateBattle_Addr = sigscan::get().scan("\x40\x53\x57\x41\x54\x41\x55\x48\x81\xEC\x88\x00\x00\x00", "xxxxxxxxxxxxxx");
     UpdateBattle_Detour = new PLH::x64Detour(UpdateBattle_Addr, reinterpret_cast<uint64_t>(&hook_UpdateBattle), reinterpret_cast<uint64_t *>(&orig_UpdateBattle));
     UpdateBattle_Detour->hook();
+
+    // AREDGameState_Battle::UpdateBattleSub (RVA 0x112B6B0), called from UpdateBattle
+    const uint64_t UpdateBattleSub_Addr = sigscan::get().scan(
+        "\x48\x8B\xC4\x48\x89\x58\x20\x41\x56\x48\x81\xEC\xA0\x00\x00\x00\x48\x89\x68\x08\x41\x0F\xB6\xE8\x48\x89\x78\x18\x48\x8B\xF9\x0F\x29\x70\xE8\x0F\x28\xF1",
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    UpdateBattleSub_Detour = new PLH::x64Detour(UpdateBattleSub_Addr, reinterpret_cast<uint64_t>(&hook_UpdateBattleSub), reinterpret_cast<uint64_t *>(&orig_UpdateBattleSub));
+    UpdateBattleSub_Detour->hook();
 
     // https://github.com/TheLettuceClub/StriveSAMMI/blob/7292cc225bd4de2b389e92b227c1b2793609c4e1/GGSTSammi/src/dllmain.cpp#L435
     const uint64_t MatchStart_Addr = sigscan::get().scan("\x48\x89\x5c\x24\x10\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8d\x6c\x24\xf0\x48\x81\xec\x10\x01\x00\x00\x0f\x29\xb4\x24", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
