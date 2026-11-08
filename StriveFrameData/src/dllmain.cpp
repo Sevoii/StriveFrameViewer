@@ -265,8 +265,6 @@ public:
 } pause_manager;
 
 class UeTracker {
-  Unreal::UObject *worldsets_actor = nullptr;
-  Unreal::FProperty *paused_prop = nullptr;
   bool renderingHooked = false;
 
   void hookFuncs() {
@@ -281,41 +279,10 @@ class UeTracker {
 
     orig_ACamUpdateCamera = (funcACamUpdateCamera_t)vtable_hook(ACamera_vtable, 208, hook_ACamUpdateCamera);
   }
-  void findProp() {
-    // static auto input_class_name = Unreal::FName(STR("REDPlayerController_Battle"), Unreal::FNAME_Add);
-    static auto getworldsets_func_name = Unreal::FName(STR("K2_GetWorldSettings"), Unreal::FNAME_Add);
-
-    // auto *input_actor = static_cast<Unreal::AActor *>(UObjectGlobals::FindFirstOf(input_class_name));
-    // if (!input_actor) return;
-
-    // auto *world_actor = input_actor->GetWorld();
-    // if (!world_actor) return;
-
-    auto world_actor = reinterpret_cast<Unreal::UObject *>(GWorld);
-
-    auto *getworldsets_func = world_actor->GetFunctionByNameInChain(getworldsets_func_name);
-    if (!getworldsets_func) return;
-
-    world_actor->ProcessEvent(getworldsets_func, &worldsets_actor);
-    if (!worldsets_actor) return;
-
-    paused_prop = worldsets_actor->GetPropertyByName(STR("PauserPlayerState"));
-  }
 
 public:
-  void reset() {
-    worldsets_actor = nullptr;
-    paused_prop = nullptr;
-  }
   void setup() {
-    reset();
     hookFuncs();
-    findProp();
-  }
-  bool isUePaused() {
-    if (!paused_prop) return false;
-    Unreal::AActor **val = static_cast<Unreal::AActor **>(paused_prop->ContainerPtrToValuePtr<void>(worldsets_actor));
-    return (bool)val ? ((bool)*val) : false;
   }
 } tracker;
 
@@ -327,7 +294,6 @@ void hook_MatchStart(AREDGameState_Battle *GameState) {
   game_state.matchStarted = true;
   game_state.roundActive = false;
   pause_manager.reset();
-  tracker.reset();
 
   DrawTool::instance().matchStart();
 
@@ -395,7 +361,9 @@ void hook_UpdateBattle(AREDGameState_Battle *GameState, float DeltaTime) {
     tracker.setup();
   }
 
-  if (!tracker.isUePaused() && game_state.roundActive) {
+  // the bar samples only when the engine actually simulated a frame (GameFrame advanced),
+  // so engine pauses and skipped updates need no special handling here
+  if (game_state.roundActive) {
     the_bar.addFrame();
   }
 }
