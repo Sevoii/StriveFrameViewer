@@ -448,20 +448,20 @@ void draw_hitboxes(const DrawTool &tool, const asw_entity &entity, bool active) 
 		// Clip outlines
 		for (auto j = 0; j < hitboxes.size(); j++) {
 			if (i != j &&
-				(hitboxes[i].type == hitboxes[j].type ||
-				 (hitboxes[i].type == hitbox::box_type::followup_hit &&
-				  hitboxes[j].type == hitbox::box_type::hit))) {
-				hitboxes[i].clip_lines(hitboxes[j]);
+			  (hitboxes[i].type == hitboxes[j].type ||
+			    (hitboxes[i].type == hitbox::box_type::followup_hit &&
+			      hitboxes[j].type == hitbox::box_type::hit))) {
+			  hitboxes[i].clip_lines(hitboxes[j]);
 			}
 		}
 
 		// Clip fill against every hitbox after, since two boxes
 		// shouldn't both be clipped against each other
 		for (auto j = i + 1; j < hitboxes.size(); j++) {
-			if (hitboxes[i].type == hitboxes[j].type ||
-				(hitboxes[i].type == hitbox::box_type::followup_hit &&
-				 hitboxes[j].type == hitbox::box_type::hit)) {
-				hitboxes[i].clip_fill(hitboxes[j]);
+		  if (hitboxes[i].type == hitboxes[j].type ||
+		    (hitboxes[i].type == hitbox::box_type::followup_hit &&
+		      hitboxes[j].type == hitbox::box_type::hit)) {
+		    hitboxes[i].clip_fill(hitboxes[j]);
 			}
 		}
 
