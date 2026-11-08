@@ -99,10 +99,6 @@ namespace Settings {
       OptionData{L"Show Dash:", 2, {L"<  Disabled  >", L"<  Enabled   >"}},
       "show_dash",
       0};
-  SettingsEntry PAUSE_TYPE = SettingsEntry{
-      OptionData{L"Pause Type: ", 2, {L"<   Default   >", L"<     WIP     >"}},
-      "pause_type",
-      0};
   SettingsEntry DELAY_AMOUNT = SettingsEntry{
       OptionData{L"Delay Frames: ", 4, {L"<     0ms     >", L"<     20ms    >", L"<     30ms    >", L"<     60ms    >"}},
       "delay_amount",
@@ -113,7 +109,7 @@ namespace Settings {
       0
   };
 
-  std::array<SettingsEntry *, 9> settings = {
+  std::array<SettingsEntry *, 8> settings = {
       &FRAMEBAR,
       &HITBOXES,
       &FADE,
@@ -121,7 +117,6 @@ namespace Settings {
       //      &SHOW_CANCEL,
       &COLOR_SCHEME,
       &SHOW_DASH_FRAMES,
-      &PAUSE_TYPE,
       &DELAY_AMOUNT,
       &CROSSUP_ENABABLED,
   };
@@ -366,7 +361,6 @@ bool ModMenu::delimEnabled() const { return Settings::DELIM.value; }
 bool ModMenu::cancelEnabled() const { return Settings::SHOW_CANCEL.value; }
 bool ModMenu::dashEnabled() const { return Settings::SHOW_DASH_FRAMES.value; }
 bool ModMenu::crossupEnabled() const { return Settings::CROSSUP_ENABABLED.value; }
-int ModMenu::pauseType() const { return Settings::PAUSE_TYPE.value; }
 
 const int delayAmounts [4] = {0, 20, 30, 60};
 int ModMenu::delayAmount() const { return delayAmounts[Settings::DELAY_AMOUNT.value]; }

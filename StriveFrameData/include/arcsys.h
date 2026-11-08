@@ -73,6 +73,11 @@ public:
   FIELD(0xC40, class asw_scene*, Scene);
   FIELD(0xC50, class asw_state*, State);
   FIELD(0xC58, class asw_events*, Events);
+
+  FIELD(0xF24, bool, bNetworkBattle);
+  // UpdatePauseState ends with PC->SetPause(pause || bPauseByFrameAdvantage). The game only writes this flag at
+  // battle setup and on the network path, so offline it is free for the mod to hold the battle paused.
+  FIELD(0x25DD, bool, bPauseByFrameAdvantage);
 };
 
 class asw_rollback

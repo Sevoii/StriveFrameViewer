@@ -51,7 +51,6 @@ public:
   bool delimEnabled() const;
   bool cancelEnabled() const;
   bool dashEnabled() const;
-  int pauseType() const;
   int delayAmount() const;
   bool crossupEnabled() const;
 

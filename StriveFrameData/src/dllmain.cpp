@@ -26,17 +26,17 @@ using namespace std::chrono_literals;
 
 // Functions
 using funcAHUDPostRender_t = void (*)(void *);
-using funcACamUpdateCamera_t = void (*)(void *, float);
 using funcMatchStart_t = void (*)(AREDGameState_Battle *);
 using funcUpdateBattle_t = void (*)(AREDGameState_Battle *, float);
 using funcUpdateBattleSub_t = void (*)(AREDGameState_Battle *, float, bool);
+using funcUpdatePauseState_t = void (*)(AREDGameState_Battle *);
 
 // Hooks
 void hook_AHUDPostRender(void *);
-void hook_ACamUpdateCamera(void *, float);
 void hook_MatchStart(AREDGameState_Battle *);
 void hook_UpdateBattle(AREDGameState_Battle *, float);
 void hook_UpdateBattleSub(AREDGameState_Battle *, float, bool);
+void hook_UpdatePauseState(AREDGameState_Battle *);
 
 /* Utilities */
 
@@ -53,10 +53,10 @@ const void *vtable_hook(const void **vtable, const int index, const void *hook) 
 
 // Functions
 funcAHUDPostRender_t orig_AHUDPostRender;
-funcACamUpdateCamera_t orig_ACamUpdateCamera;
 funcMatchStart_t orig_MatchStart;
 funcUpdateBattle_t orig_UpdateBattle;
 funcUpdateBattleSub_t orig_UpdateBattleSub;
+funcUpdatePauseState_t orig_UpdatePauseState;
 
 // State Data
 UE4SSProgram *Program;
@@ -145,13 +145,6 @@ public:
     return false;
   }
 
-  void resetButton(int input) {
-    int index = getButtonIndex(input);
-    if (index != -1) {
-      buttonStates[index] = false;
-    }
-  }
-
   void resetButtons() {
     for (int i = 0; i < BUTTON_COUNT; i++) {
       buttonStates[i] = false;
@@ -164,8 +157,8 @@ public:
     }
   }
 
-  void checkBinds(bool await = false) {
-    auto inputs = BindWatcherI::getInputs(await);
+  void checkBinds() {
+    auto inputs = BindWatcherI::getInputs(false);
     for (const auto &input : inputs) {
       setButtonState(input, true);
     }
@@ -175,50 +168,43 @@ private:
   bool buttonStates[BUTTON_COUNT] = {};
 } keybindings;
 
+/*
+  Pauses the battle through the engine's own pause path, the same one replay mode uses.
+
+  Every tick UpdateOnPreTick calls AREDGameState_Battle::UpdatePauseState, which ends with
+  PC->SetPause(pause || bPauseByFrameAdvantage). We set that flag right before UpdatePauseState runs, so the
+  whole world pauses (UpdateBattleSub skips its simulation block, particles/animation/camera freeze) while the
+  game state keeps ticking, since it is SetTickableWhenPaused. That keeps UpdateBattle (and our input handling)
+  running while paused.
+
+  A step lets exactly one tick through unpaused, like CReplayManager's m_StepPlay: F4 is read in UpdateBattle on
+  tick N, the next UpdatePauseState (tick N+1) leaves the flag clear so that tick simulates one frame, and the
+  flag is held again from tick N+2.
+*/
 class PauseManager {
-  bool isPaused = false;
-  bool shouldAdvance = false;
+  bool paused = false;
+  bool step_requested = false;
 
 public:
-  bool advancing() const {
-    return isPaused && shouldAdvance;
+  void toggle() {
+    paused = !paused;
+    step_requested = false;
   }
 
-  bool cinematicShouldAdvance() {
-    return isPaused && !shouldAdvance;
+  void step() {
+    if (paused) step_requested = true;
   }
 
-  void updateBinds() {
-    if (keybindings.getButtonState(keybindings.PAUSE_BUTTON)) {
-      keybindings.resetButton(keybindings.PAUSE_BUTTON);
-      isPaused = !isPaused;
-    }
-
-    if (keybindings.getButtonState(keybindings.ADVANCE_BUTTON)) {
-      keybindings.resetButton(keybindings.ADVANCE_BUTTON);
-      shouldAdvance = true;
-    }
-  }
-
-  void checkPause() {
-    if (advancing()) {
-      shouldAdvance = false;
-      return;
-    }
-
-    updateBinds();
-
-    if (ModMenu::instance().pauseType() == 0) {
-      while (isPaused && !shouldAdvance) {
-        keybindings.checkBinds(true);
-        updateBinds();
-      }
-    }
+  // called once per UpdatePauseState; returns whether to hold the engine paused this tick
+  bool consumeTick() {
+    const bool hold = paused && !step_requested;
+    step_requested = false;
+    return hold;
   }
 
   void reset() {
-    isPaused = false;
-    shouldAdvance = false;
+    paused = false;
+    step_requested = false;
   }
 } pause_manager;
 
@@ -232,10 +218,6 @@ class UeTracker {
     /* HUD Rendering vtable hook*/
     const auto **AHUD_vtable = (const void **)get_rip_relative(sigscan::get().scan("\x48\x8D\x05\x00\x00\x00\x00\xC6\x83\x18\x03", "xxx????xxxx") + 3);
     orig_AHUDPostRender = (funcAHUDPostRender_t)vtable_hook(AHUD_vtable, 214, hook_AHUDPostRender);
-
-    const auto **ACamera_vtable = (const void **)get_rip_relative(sigscan::get().scan("\x48\x8D\x05\x00\x00\x00\x00\x48\x89\x07\x48\x8D\x8F\x00\x00\x00\x00\xC7\x87\x00\x00\x00\x00\xFF\xFF\xFF\xFF", "xxx????xxxxxx????xx????xxxx") + 3);
-
-    orig_ACamUpdateCamera = (funcACamUpdateCamera_t)vtable_hook(ACamera_vtable, 208, hook_ACamUpdateCamera);
   }
 
 public:
@@ -271,17 +253,15 @@ void hook_AHUDPostRender(void *hud) {
     if (menu.barEnabled()) the_bar.draw();
   }
 
-  if (pause_manager.advancing()) return;
   orig_AHUDPostRender(hud);
 }
-void hook_ACamUpdateCamera(void *cam, float DeltaTime) {
-  if (!game_state.checkMode()) {
-    orig_ACamUpdateCamera(cam, DeltaTime);
-    return;
+void hook_UpdatePauseState(AREDGameState_Battle *GameState) {
+  // never touch the flag online: there it is the engine's frame-advantage wait for rollback netcode
+  if (game_state.checkMode() && !GameState->bNetworkBattle) {
+    GameState->bPauseByFrameAdvantage = pause_manager.consumeTick();
   }
 
-  if (pause_manager.advancing()) return;
-  orig_ACamUpdateCamera(cam, DeltaTime);
+  orig_UpdatePauseState(GameState);
 }
 void hook_UpdateBattle(AREDGameState_Battle *GameState, float DeltaTime) {
   if (!game_state.checkMode()) {
@@ -289,13 +269,13 @@ void hook_UpdateBattle(AREDGameState_Battle *GameState, float DeltaTime) {
     return;
   }
 
+  // slow motion: stretch every tick by a fixed delay
   std::this_thread::sleep_for(std::chrono::milliseconds(ModMenu::instance().delayAmount()));
 
-  keybindings.checkBinds(false);
-  pause_manager.checkPause();
-
-  if (ModMenu::instance().pauseType() == 0 && pause_manager.advancing()) return;
-  if (ModMenu::instance().pauseType() == 1 && pause_manager.cinematicShouldAdvance()) return;
+  // this still runs while the engine is paused (the battle game state ticks when paused)
+  keybindings.checkBinds();
+  if (keybindings.getButtonState(keybindings.PAUSE_BUTTON)) pause_manager.toggle();
+  if (keybindings.getButtonState(keybindings.ADVANCE_BUTTON)) pause_manager.step();
 
   ModMenu::instance().update(PressedKeys{
       keybindings.getButtonState(keybindings.TOGGLE_FRAMEBAR_BUTTON),
@@ -334,6 +314,7 @@ class StriveFrameData : public CppUserModBase {
 public:
   PLH::x64Detour *UpdateBattle_Detour;
   PLH::x64Detour *UpdateBattleSub_Detour;
+  PLH::x64Detour *UpdatePauseState_Detour;
   PLH::x64Detour *MatchStart_Detour;
 
   StriveFrameData()
@@ -344,6 +325,7 @@ public:
     ModAuthors = STR("pbozai, Sevoi");
     UpdateBattle_Detour = nullptr;
     UpdateBattleSub_Detour = nullptr;
+    UpdatePauseState_Detour = nullptr;
     MatchStart_Detour = nullptr;
     // Do not change this unless you want to target a UE4SS version
     // other than the one you're currently building with somehow.
@@ -369,6 +351,14 @@ public:
         "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     UpdateBattleSub_Detour = new PLH::x64Detour(UpdateBattleSub_Addr, reinterpret_cast<uint64_t>(&hook_UpdateBattleSub), reinterpret_cast<uint64_t *>(&orig_UpdateBattleSub));
     UpdateBattleSub_Detour->hook();
+
+    // AREDGameState_Battle::UpdatePauseState (RVA 0x112F1C0), called from UpdateOnPreTick every tick.
+    // SwitchPause is inlined in its tail, so this is the hookable entry.
+    const uint64_t UpdatePauseState_Addr = sigscan::get().scan(
+        "\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xEC\x30\x48\x8B\xF9\x40\x32\xF6\x48\x8B\x0D\x00\x00\x00\x00",
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx????");
+    UpdatePauseState_Detour = new PLH::x64Detour(UpdatePauseState_Addr, reinterpret_cast<uint64_t>(&hook_UpdatePauseState), reinterpret_cast<uint64_t *>(&orig_UpdatePauseState));
+    UpdatePauseState_Detour->hook();
 
     // https://github.com/TheLettuceClub/StriveSAMMI/blob/7292cc225bd4de2b389e92b227c1b2793609c4e1/GGSTSammi/src/dllmain.cpp#L435
     const uint64_t MatchStart_Addr = sigscan::get().scan("\x48\x89\x5c\x24\x10\x55\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8d\x6c\x24\xf0\x48\x81\xec\x10\x01\x00\x00\x0f\x29\xb4\x24", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
