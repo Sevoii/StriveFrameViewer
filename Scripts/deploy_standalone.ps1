@@ -3,12 +3,12 @@
 # modify to target the your Guilty Gear installation root folder
 $Game_Dir = "C:\Program Files (x86)\Steam\steamapps\common\GUILTY GEAR STRIVE"
 
-
 $Project_Dir = (get-item $PSScriptRoot).Parent.FullName
 $Package_Dir = "$Project_Dir\Packages\Standalone"
 $Install_Dir = "$Game_Dir\RED\Binaries\Win64\"
 
 Write-Host "Building Package"
+#& "$PSScriptRoot/build_project.ps1"
 & "$PSScriptRoot/package_standalone.ps1"
 #pwsh -File "$PSScriptRoot/package_standalone.ps1"
 #if($LastExitCode -ne 0) { Exit $LastExitCode }
