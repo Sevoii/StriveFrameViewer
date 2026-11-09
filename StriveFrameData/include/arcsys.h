@@ -73,6 +73,8 @@ public:
   FIELD(0xC40, class asw_scene*, Scene);
   FIELD(0xC50, class asw_state*, State);
   FIELD(0xC58, class asw_events*, Events);
+  FIELD(0xC60, class battle_bg_location*, BGLocation); // red::btl::GetBGLocation()
+  FIELD(0xC70, class replay_manager*, ReplayManager); // TUniquePtr<red::btl::CReplayManager>
 
   FIELD(0xF24, bool, bNetworkBattle);
   // UpdatePauseState ends with PC->SetPause(pause || bPauseByFrameAdvantage). The game only writes this flag at
@@ -91,6 +93,24 @@ public:
   };
 
   static asw_rollback *get();
+
+  // A separate BATTLE_CRollbackManager owned by the mod, built with the engine's own constructor so it snapshots
+  // exactly what netplay rollback does. The game's instance (GameState->Rollback) is never touched.
+  // Must be created during a battle: the constructor sizes its buffers from the live object manager.
+  static constexpr size_t OBJECT_SIZE = 0x4D0; // `new` size at the game's construction site
+  static constexpr size_t SLOT_SIZE = 0x8750;  // sizeof(SBackupData)
+  static bool owned_available();               // all engine functions were found
+  static asw_rollback *create_owned(int max_frames);
+  static void destroy_owned(asw_rollback *instance);
+
+  void save_backup(); // SaveBackup(): advance CurrentBackupDataIndex, snapshot the battle into that slot
+  bool rollback();    // Rollback(): restore slot CurrentBackupDataIndex - RollbackFrame, invalidate newer slots
+  bool slot_set(int index) const;
+  void set_slot_flag(int index, bool set); // write a slot's bSet (Rollback() clears it on slots it considers newer)
+  // Kill cached particles / return cached effect pawns. Netplay calls these on the game's instance after resimulating,
+  // to drop whatever the resimulation did not reclaim.
+  void clear_psc_cache();
+  void clear_pawn_cache();
 
   FIELD(0x8, int, MaxBackupFrame);
   FIELD(0x10, RC::Unreal::TArray<backup_data>, BackupData);
@@ -115,6 +135,45 @@ public:
   FIELD(0x4C6, bool, IsRestoreAndResim);
   FIELD(0x4C7, bool, bSaveLimitReached);
   FIELD(0x4C8, int, SavedFrameCountThisFrame);
+};
+
+// red::replay key stream read position (ReplayPeer::m_ReadHead). Keys are RLE: m_Cursor indexes the key array,
+// m_Count is how far into that key's run we are, m_SolidPosition is the number of frames consumed.
+struct replay_head {
+  uint32_t cursor;
+  uint32_t count;
+  uint32_t solid_position;
+};
+
+// ReplayManager_Internal::m_Replaybuffer[6] (2 sides x 3 members), a static global in the exe
+class replay_peer {
+public:
+  static constexpr int COUNT = 6;
+  static constexpr size_t STRIDE = 0x28;
+  enum OPERATION : int { OP_NONE = 0, OP_WRITE = 1, OP_READ_ONCE = 2, OP_READ_LOOP = 3, OP_NETWORK = 4, OP_NETWORK_ONESHOT = 5 };
+
+  static replay_peer *get(int index); // nullptr if the global was not found
+
+  FIELD(0x8, replay_head, ReadHead);
+  FIELD(0x20, int, OperationType);
+
+  bool is_reading() const { return OperationType == OP_READ_ONCE || OperationType == OP_READ_LOOP; }
+};
+
+// red::btl::CReplayManager (battle_Replay.h, REPLAY_GG4 == 1), the game's replay pause / step / speed state.
+// Per tick: UpdateOnPreTick -> UpdatePauseState reads these to decide PC->SetPause, then UpdateBattle calls
+// Update(), which clears StepPlay first and sets it again on the step button. So a StepPlay written after
+// UpdateBattle returns lets exactly one frame through on the next tick, like pressing the replay step button.
+class replay_manager {
+public:
+  FIELD(0x0, bool, Pause);
+  FIELD(0x1, bool, StepPlay);
+  FIELD(0x8, int, PlayScale); // <0 slow, >0 fast
+  FIELD(0xC, int, SkipFrame); // slow motion: ticks left to hold before the next frame
+
+  // UpdatePauseState's replay branch: (m_Pause || m_SkipFrame > 0) && !m_StepPlay. Before Update() runs in
+  // UpdateBattle, StepPlay still holds the value UpdatePauseState saw, so this tells whether this tick simulates.
+  bool holds_pause() const { return (Pause || SkipFrame > 0) && !StepPlay; }
 };
 
 class player_block {
@@ -185,6 +244,14 @@ public:
 
   ARRAY_FIELD(0x8, event_info[10], events);
   FIELD(0xA8, unsigned long, event_count);
+};
+
+// BattleBGLocation: which stage box (area) the battle is in. Wall breaks move to another box; the stage blueprint
+// shows/loads that box's background from level events, which rollback snapshots do not cover (see stage_sync.h).
+// Offset from BattleBGLocation::ApplyRollbackData (RVA 0xBD99A0).
+class battle_bg_location {
+public:
+  FIELD(0xA8, int, BoxIndex);
 };
 
 class asw_inputs {

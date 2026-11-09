@@ -34,3 +34,8 @@ Copy-Item "$Proxy_DLL" "$Package_Dir\dwmapi.dll" | Out-Null
 Copy-Item "$Project_Dir\prereqs\mods.txt" "$Package_Dir\Mods\mods.txt" | Out-Null
 Copy-Item "$Project_Dir\prereqs\UE4SS-settings.ini" "$Package_Dir\UE4SS-settings.ini" | Out-Null
 #Copy-Item "$Project_Dir\prereqs\FText_Constructor.lua" "$Package_Dir\UE4SS_Signatures\FText_Constructor.lua" | Out-Null
+
+Write-Host "Zipping Package"
+$Zip_Path = "$Project_Dir\Packages\StriveFrameViewer-Standalone.zip"
+Compress-Archive -Path "$Package_Dir\*" -DestinationPath "$Zip_Path" -Force
+Write-Host "Created $Zip_Path"

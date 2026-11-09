@@ -6,6 +6,7 @@
 #include "framebar.h"
 #include "hitboxes.h"
 #include "menu.h"
+#include "rewind.h"
 #include "sigscan.h"
 #include <chrono>
 #include <thread>
@@ -76,6 +77,8 @@ public:
     }
     return in_allowed_mode;
   }
+  // Looks at the round events queued for the next simulated frame (each frame executes and clears the events the
+  // previous one queued). Sets `resetting` if a round reset / end / start is queued and updates `roundActive`.
   void checkRound() {
     resetting = false;
     auto *events = asw_events::get();
@@ -103,7 +106,7 @@ public:
 
 class Keybinds {
 public:
-  static const int BUTTON_COUNT = 9;
+  static const int BUTTON_COUNT = 13;
 
   int TOGGLE_FRAMEBAR_BUTTON = VK_F1;
   int TOGGLE_HITBOX_BUTTON = VK_F2;
@@ -116,7 +119,24 @@ public:
   int MENU_LEFT_BUTTON = VK_LEFT;
   int MENU_RIGHT_BUTTON = VK_RIGHT;
 
-  int buttons[BUTTON_COUNT] = {TOGGLE_FRAMEBAR_BUTTON, TOGGLE_HITBOX_BUTTON, PAUSE_BUTTON, ADVANCE_BUTTON, TOGGLE_MENU_BUTTON, MENU_UP_BUTTON, MENU_DOWN_BUTTON, MENU_LEFT_BUTTON, MENU_RIGHT_BUTTON};
+  // replay seek (replay mode only)
+  int SEEK_BACK_LONG_BUTTON = 'Q';
+  int SEEK_BACK_SHORT_BUTTON = 'W';
+  int SEEK_FORWARD_SHORT_BUTTON = 'E';
+  int SEEK_FORWARD_LONG_BUTTON = 'R';
+
+  int buttons[BUTTON_COUNT] = {TOGGLE_FRAMEBAR_BUTTON, TOGGLE_HITBOX_BUTTON, PAUSE_BUTTON, ADVANCE_BUTTON, TOGGLE_MENU_BUTTON, MENU_UP_BUTTON, MENU_DOWN_BUTTON, MENU_LEFT_BUTTON, MENU_RIGHT_BUTTON,
+                               SEEK_BACK_LONG_BUTTON, SEEK_BACK_SHORT_BUTTON, SEEK_FORWARD_SHORT_BUTTON, SEEK_FORWARD_LONG_BUTTON};
+
+  // seek distance in frames (60/s, negative = back) requested this tick, 0 if none; the last listed bind wins
+  int seekFrames() {
+    int frames = 0;
+    if (getButtonState(SEEK_BACK_LONG_BUTTON)) frames = -3 * 60;
+    if (getButtonState(SEEK_BACK_SHORT_BUTTON)) frames = -1 * 60;
+    if (getButtonState(SEEK_FORWARD_SHORT_BUTTON)) frames = 1 * 60;
+    if (getButtonState(SEEK_FORWARD_LONG_BUTTON)) frames = 3 * 60;
+    return frames;
+  }
 
   int getButtonIndex(int input) {
     for (int i = 0; i < BUTTON_COUNT; i++) {
@@ -229,11 +249,30 @@ public:
 /* Hooks */
 
 FrameBar the_bar;
+ReplayRewind replay_rewind;
+
+// rewind only ever runs on offline replay playback
+bool isReplayPlayback(const AREDGameState_Battle *GameState) {
+  return getGameMode() == GAME_MODE_REPLAY && !GameState->bNetworkBattle && GameState->ReplayManager;
+}
+
+// Runs once per tick before UpdateBattle and again after every simulated frame: a tick can simulate many frames
+// (replay fast forward, seeking), and a round event queued by one of them is executed by the next one, so a
+// per-tick check alone would miss it. Re-seeing the same queued event on the next check is harmless.
+void checkRoundEvents(const AREDGameState_Battle *GameState) {
+  game_state.checkRound();
+  if (!game_state.resetting) return;
+  the_bar.reset();
+  // snapshots are only valid within one round
+  if (isReplayPlayback(GameState)) replay_rewind.invalidate();
+}
 
 void hook_MatchStart(AREDGameState_Battle *GameState) {
   game_state.matchStarted = true;
   game_state.roundActive = false;
   pause_manager.reset();
+  replay_rewind.invalidate();
+  BindWatcherI::clearInputs();
 
   orig_MatchStart(GameState);
 }
@@ -265,6 +304,8 @@ void hook_UpdatePauseState(AREDGameState_Battle *GameState) {
 }
 void hook_UpdateBattle(AREDGameState_Battle *GameState, float DeltaTime) {
   if (!game_state.checkMode()) {
+    // drop keys pressed outside the supported modes so they do not fire on the next battle
+    BindWatcherI::clearInputs();
     orig_UpdateBattle(GameState, DeltaTime);
     return;
   }
@@ -285,14 +326,31 @@ void hook_UpdateBattle(AREDGameState_Battle *GameState, float DeltaTime) {
       keybindings.getButtonState(keybindings.MENU_DOWN_BUTTON),
       keybindings.getButtonState(keybindings.MENU_RIGHT_BUTTON),
       keybindings.getButtonState(keybindings.MENU_LEFT_BUTTON)});
+  const int seek_frames = keybindings.seekFrames();
   keybindings.resetButtons();
 
-  game_state.checkRound();
-  if (game_state.resetting) {
-    the_bar.reset();
-  }
+  checkRoundEvents(GameState);
 
-  orig_UpdateBattle(GameState, DeltaTime);
+  if (!isReplayPlayback(GameState)) {
+    orig_UpdateBattle(GameState, DeltaTime);
+  } else {
+    auto *replay = GameState->ReplayManager;
+    // this tick simulates unless the replay's own pause or the mod pause (written by UpdatePauseState) holds it
+    const bool simulating = !replay->holds_pause() && !GameState->bPauseByFrameAdvantage;
+
+    if (seek_frames) replay_rewind.seek(seek_frames);
+
+    const bool forward_tick = simulating && replay_rewind.forwardPending();
+    if (forward_tick) replay_rewind.beginForwardTick(GameState);
+    orig_UpdateBattle(GameState, DeltaTime);
+    if (forward_tick) replay_rewind.endForwardTick(GameState);
+
+    // a seek always ends by simulating; while paused, let exactly one tick through (it runs the whole distance)
+    if (replay_rewind.forwardPending()) {
+      if (replay->Pause) replay->StepPlay = true;
+      pause_manager.step();
+    }
+  }
 
   if (game_state.matchStarted) {
     game_state.matchStarted = false;
@@ -302,11 +360,18 @@ void hook_UpdateBattle(AREDGameState_Battle *GameState, float DeltaTime) {
 void hook_UpdateBattleSub(AREDGameState_Battle *GameState, float DeltaTime, bool bSkip) {
   orig_UpdateBattleSub(GameState, DeltaTime, bSkip);
 
+  if (!game_state.checkMode()) return;
+
   // sample after every battle sub-update; the history only records when GameFrame advanced,
   // so engine pauses and skipped updates need no special handling here
-  if (game_state.checkMode() && game_state.roundActive) {
-    the_bar.addFrame();
-  }
+  if (game_state.roundActive) the_bar.addFrame();
+
+  // a reset queued by this frame happens on the next one, so this frame still belongs to the old round
+  checkRoundEvents(GameState);
+
+  // snapshot every simulated replay frame (no-op when GameFrame did not advance), but not one from a round that is
+  // about to end: its snapshots were just dropped
+  if (!game_state.resetting && isReplayPlayback(GameState)) replay_rewind.afterUpdate(GameState);
 }
 
 /* Mod Definition */

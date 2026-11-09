@@ -877,8 +877,13 @@ void FrameBar::Data::addFrame() {
   const int game_frame = engine->GameFrame;
   if (game_frame == last_game_frame) return;
 
-  // counter went backwards: new object manager (match restart) or a rewind; drop the frames that no longer happened
-  if (game_frame < last_game_frame) history.rewindTo(game_frame);
+  // counter went backwards: new object manager (match restart) or a rewind; drop the frames that no longer happened.
+  // The projectile tracker's ownership/age/hit state describes the abandoned future, so start it over: projectiles
+  // still alive at the restored frame are picked up again from their parent links on this sample.
+  if (game_frame < last_game_frame) {
+    history.rewindTo(game_frame);
+    sampler.reset();
+  }
 
   // TODO: when this is driven from UpdateBattle (rather than once per UpdateBattleSub), a call can cover several
   // simulated frames (replay fast forward, rollback catch-up). Only the final state is visible here, so those

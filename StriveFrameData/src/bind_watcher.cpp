@@ -52,6 +52,15 @@ class BindWatcher {
     return true;
   }
 
+  // the low-level hook sees keys typed into every window; only count the ones typed into the game
+  static bool gameFocused() {
+    HWND fg = GetForegroundWindow();
+    if (!fg) return false;
+    DWORD pid = 0;
+    GetWindowThreadProcessId(fg, &pid);
+    return pid == GetCurrentProcessId();
+  }
+
   BindWatcher() = default;
 
 public:
@@ -70,11 +79,16 @@ public:
     return result;
   }
 
+  void clearInputs() {
+    std::lock_guard state_lock(state_mutex);
+    inputs.clear();
+  }
+
   LRESULT callback(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode >= HC_ACTION && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)) {
       KBDLLHOOKSTRUCT &k = *(KBDLLHOOKSTRUCT *)lParam;
 
-      if (markKey(k.vkCode)) await_con.notify_all();
+      if (gameFocused() && markKey(k.vkCode)) await_con.notify_all();
     }
     return worker.callNext(nCode, wParam, lParam);
   }
@@ -95,4 +109,8 @@ void BindWatcherI::addToFilter(unsigned long code) {
 
 std::vector<int> BindWatcherI::getInputs(bool await) {
   return BindWatcher::instance().getInputs(await);
+}
+
+void BindWatcherI::clearInputs() {
+  BindWatcher::instance().clearInputs();
 }

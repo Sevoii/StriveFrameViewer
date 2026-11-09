@@ -39,6 +39,17 @@ Additionally, there are some space saving features. If a segment of frames is lo
 - F5: Open mod menu
     - Use arrow keys to navigate the mod menu
 
+### Replay controls (replay mode only, works paused or playing)
+
+Code ported over from [Strive Replay Rewind](https://github.com/Sevoii/StriveReplayRewind)
+
+- Q: Rewind 3 seconds
+- W: Rewind 1 second
+- E: Fast forward 1 second
+- R: Fast forward 3 seconds
+
+Rewinding is limited to the current round.
+
 ## TODO:
 - Fix Leo backstance move lengths
 - Add data about largest gap for each player
@@ -62,7 +73,9 @@ I advise disabling this mod (as detailed above) and restarting the game before p
 ## Compiling from source
 Start by downloading the project, you will need a github account with permissions to download the Unreal repository to do so (see the dependent UE4SS repository for instructions on this)
 With either method, you may need to first manually run ```git submodule update --init --recursive``` on the RE-U4SS submodule.
+
 ### Auto Build
+
 Requires powershell 7.4.1 or newer and MSVC build tools
 The project can be built automatically using ```Scripts/build_project.ps1```.
 Then you can run any of the package_*.ps1 or deploy_*.ps1 scripts in the same folder.
