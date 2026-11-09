@@ -5,3 +5,7 @@ GBVSRollback/
 pak_reloader/
 build/
 Packages/
+
+.idea
+.vs
+.vscode
