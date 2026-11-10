@@ -39,16 +39,12 @@ Additionally, there are some space saving features. If a segment of frames is lo
 - F5: Open mod menu
     - Use arrow keys to navigate the mod menu
 
-### Replay controls (replay mode only, works paused or playing)
-
-Code ported over from [Strive Replay Rewind](https://github.com/Sevoii/StriveReplayRewind)
+### Replay controls
 
 - Q: Rewind 3 seconds
 - W: Rewind 1 second
 - E: Fast forward 1 second
 - R: Fast forward 3 seconds
-
-Rewinding is limited to the current round.
 
 ## TODO:
 - Fix Leo backstance move lengths
